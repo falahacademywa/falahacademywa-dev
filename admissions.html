@@ -499,27 +499,223 @@
   <script>
     let popupStep = 1;
 
-    function openAdmissionPopup() {
-      document.getElementById('admission-popup').classList.add('open');
-      document.body.classList.add('popup-open');
-      popupStep = 1;
-      showPopupStep(1);
+    // ============================================================
+    // VALIDATION HELPERS
+    // ============================================================
+
+    // US phone: accepts (xxx) xxx-xxxx, xxx-xxx-xxxx, xxxxxxxxxx, +1xxxxxxxxxx
+    function isValidUSPhone(phone) {
+      const cleaned = phone.replace(/[\s\-\(\)\+\.]/g, '');
+      const digits = cleaned.replace(/^1/, ''); // remove leading 1
+      return /^\d{10}$/.test(digits);
     }
 
-    function closeAdmissionPopup() {
-      document.getElementById('admission-popup').classList.remove('open');
-      document.body.classList.remove('popup-open');
+    // Valid email
+    function isValidEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
     }
 
-    // Close on overlay click
-    document.getElementById('admission-popup').addEventListener('click', function(e) {
-      if (e.target === this) closeAdmissionPopup();
-    });
+    // Name must be at least 2 characters and only letters/spaces/hyphens
+    function isValidName(name) {
+      return name.trim().length >= 2 && /^[a-zA-Z\s\-'\.]+$/.test(name.trim());
+    }
 
-    // Close on Escape key
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') closeAdmissionPopup();
-    });
+    // ZIP code: 5 digits
+    function isValidZip(zip) {
+      return /^\d{5}$/.test(zip.trim());
+    }
+
+    // Show inline error below a field
+    function showFieldError(fieldId, message) {
+      const field = document.getElementById(fieldId);
+      if (!field) return;
+      field.style.borderColor = '#c62828';
+      let err = field.parentElement.querySelector('.field-error');
+      if (!err) {
+        err = document.createElement('p');
+        err.className = 'field-error';
+        err.style.cssText = 'color:#c62828;font-size:11px;margin-top:4px;';
+        field.parentElement.appendChild(err);
+      }
+      err.textContent = message;
+    }
+
+    function clearFieldError(fieldId) {
+      const field = document.getElementById(fieldId);
+      if (!field) return;
+      field.style.borderColor = '';
+      const err = field.parentElement.querySelector('.field-error');
+      if (err) err.remove();
+    }
+
+    function clearAllErrors() {
+      document.querySelectorAll('.field-error').forEach(e => e.remove());
+      document.querySelectorAll('.form-input, .form-select').forEach(f => f.style.borderColor = '');
+    }
+
+    // ============================================================
+    // STEP VALIDATION
+    // ============================================================
+    function validatePopupStep(step) {
+      clearAllErrors();
+      let valid = true;
+
+      if (step === 1) {
+        // Student names — min 2 chars
+        ['p_student_first', 'p_student_last'].forEach(id => {
+          const val = document.getElementById(id)?.value || '';
+          if (!isValidName(val)) {
+            showFieldError(id, 'Please enter a valid name (at least 2 characters)');
+            valid = false;
+          }
+        });
+
+        // Gender
+        if (!document.querySelector('input[name="p_gender"]:checked')) {
+          valid = false;
+          const genderGroup = document.querySelector('.form-radio-group');
+          if (genderGroup) {
+            let err = genderGroup.querySelector('.field-error');
+            if (!err) {
+              err = document.createElement('p');
+              err.className = 'field-error';
+              err.style.cssText = 'color:#c62828;font-size:11px;margin-top:4px;';
+              genderGroup.appendChild(err);
+            }
+            err.textContent = 'Please select a gender';
+          }
+        }
+
+        // DOB
+        const dob = document.getElementById('p_dob')?.value || '';
+        if (!dob) {
+          showFieldError('p_dob', 'Please enter date of birth');
+          valid = false;
+        }
+
+        // Address fields
+        const street = document.getElementById('p_street')?.value || '';
+        const city = document.getElementById('p_city')?.value || '';
+        const zip = document.getElementById('p_zipcode')?.value || '';
+        if (street.trim().length < 5) { showFieldError('p_street', 'Please enter a valid street address'); valid = false; }
+        if (city.trim().length < 2) { showFieldError('p_city', 'Please enter a valid city'); valid = false; }
+        if (!isValidZip(zip)) { showFieldError('p_zipcode', 'Please enter a valid 5-digit ZIP code'); valid = false; }
+
+        // Grade
+        if (!document.getElementById('p_grade')?.value) {
+          showFieldError('p_grade', 'Please select a grade');
+          valid = false;
+        }
+      }
+
+      if (step === 2) {
+        // Father names
+        ['p_father_first', 'p_father_last'].forEach(id => {
+          const val = document.getElementById(id)?.value || '';
+          if (!isValidName(val)) {
+            showFieldError(id, 'Please enter a valid name (at least 2 characters)');
+            valid = false;
+          }
+        });
+
+        // Mother names
+        ['p_mother_first', 'p_mother_last'].forEach(id => {
+          const val = document.getElementById(id)?.value || '';
+          if (!isValidName(val)) {
+            showFieldError(id, 'Please enter a valid name (at least 2 characters)');
+            valid = false;
+          }
+        });
+
+        // Father email
+        const fEmail = document.getElementById('p_father_email')?.value || '';
+        if (!isValidEmail(fEmail)) {
+          showFieldError('p_father_email', 'Please enter a valid email address');
+          valid = false;
+        }
+
+        // Father phone
+        const fPhone = document.getElementById('p_father_phone')?.value || '';
+        if (!isValidUSPhone(fPhone)) {
+          showFieldError('p_father_phone', 'Please enter a valid US phone number e.g. (206) 555-0123');
+          valid = false;
+        }
+
+        // Mother phone
+        const mPhone = document.getElementById('p_mother_phone')?.value || '';
+        if (!isValidUSPhone(mPhone)) {
+          showFieldError('p_mother_phone', 'Please enter a valid US phone number e.g. (206) 555-0123');
+          valid = false;
+        }
+
+        // Father and Mother phones cannot be same
+        if (isValidUSPhone(fPhone) && isValidUSPhone(mPhone)) {
+          const fCleaned = fPhone.replace(/\D/g,'').replace(/^1/,'');
+          const mCleaned = mPhone.replace(/\D/g,'').replace(/^1/,'');
+          if (fCleaned === mCleaned) {
+            showFieldError('p_mother_phone', 'Mother's phone cannot be the same as Father's phone');
+            valid = false;
+          }
+        }
+      }
+
+      if (step === 3) {
+        // Emergency name
+        const emgName = document.getElementById('p_emg_name')?.value || '';
+        if (!isValidName(emgName)) {
+          showFieldError('p_emg_name', 'Please enter a valid name (at least 2 characters)');
+          valid = false;
+        }
+
+        // Emergency phone
+        const emgPhone = document.getElementById('p_emg_phone')?.value || '';
+        if (!isValidUSPhone(emgPhone)) {
+          showFieldError('p_emg_phone', 'Please enter a valid US phone number');
+          valid = false;
+        }
+
+        // Emergency phone cannot match father or mother phone
+        if (isValidUSPhone(emgPhone)) {
+          const emgCleaned = emgPhone.replace(/\D/g,'').replace(/^1/,'');
+          const fCleaned = (document.getElementById('p_father_phone')?.value || '').replace(/\D/g,'').replace(/^1/,'');
+          const mCleaned = (document.getElementById('p_mother_phone')?.value || '').replace(/\D/g,'').replace(/^1/,'');
+          if (emgCleaned === fCleaned) {
+            showFieldError('p_emg_phone', 'Emergency contact phone cannot be the same as Father's phone');
+            valid = false;
+          } else if (emgCleaned === mCleaned) {
+            showFieldError('p_emg_phone', 'Emergency contact phone cannot be the same as Mother's phone');
+            valid = false;
+          }
+        }
+
+        // Relationship
+        if (!document.getElementById('p_emg_rel')?.value) {
+          showFieldError('p_emg_rel', 'Please select a relationship');
+          valid = false;
+        }
+      }
+
+      if (step === 4) {
+        // Agreement checkbox
+        if (!document.getElementById('p_agree')?.checked) {
+          const cb = document.getElementById('p_agree');
+          if (cb) {
+            cb.style.outline = '2px solid #c62828';
+            let err = cb.closest('.form-group')?.querySelector('.field-error');
+            if (!err) {
+              err = document.createElement('p');
+              err.className = 'field-error';
+              err.style.cssText = 'color:#c62828;font-size:11px;margin-top:4px;';
+              cb.closest('.form-group')?.appendChild(err);
+            }
+            err.textContent = 'Please agree to the terms to proceed';
+          }
+          valid = false;
+        }
+      }
+
+      return valid;
+    }
 
     function showPopupStep(step) {
       document.querySelectorAll('.popup-form-page').forEach((p, i) => {
@@ -537,7 +733,6 @@
         }
       }
       popupStep = step;
-      // Scroll to top of modal
       document.querySelector('.popup-modal').scrollTop = 0;
     }
 
@@ -547,75 +742,31 @@
     }
 
     function popupPrev() {
+      clearAllErrors();
       if (popupStep > 1) showPopupStep(popupStep - 1);
     }
 
-    function validatePopupStep(step) {
-      const page = document.querySelector(`.popup-form-page[data-step="${step}"]`);
-      if (!page) return true;
-      let valid = true;
-      page.querySelectorAll('[required]').forEach(field => {
-        field.style.borderColor = '';
-        if (field.type === 'radio') return;
-        if (!field.value.trim()) { field.style.borderColor = '#c62828'; valid = false; }
-      });
-      // Check radio groups
-      const genderChecked = page.querySelector('input[name="p_gender"]:checked');
-      if (step === 1 && !genderChecked) {
-        valid = false;
-        alert('Please select a gender.');
-      }
-      if (!valid && step !== 1) alert('Please fill in all required fields.');
-      return valid;
+    function openAdmissionPopup() {
+      document.getElementById('admission-popup').classList.add('open');
+      document.body.classList.add('popup-open');
+      popupStep = 1;
+      showPopupStep(1);
     }
 
-    function submitPopupForm(e) {
-      e.preventDefault();
-      if (!validatePopupStep(4)) return;
-      const btn = document.getElementById('popup-submit-btn');
-      btn.disabled = true; btn.textContent = 'Submitting...';
-
-      const params = {
-        student_first_name: document.getElementById('p_student_first')?.value || '',
-        student_middle_name: document.getElementById('p_student_middle')?.value || '',
-        student_last_name: document.getElementById('p_student_last')?.value || '',
-        gender: document.querySelector('input[name="p_gender"]:checked')?.value || '',
-        date_of_birth: document.getElementById('p_dob')?.value || '',
-        address: document.getElementById('p_address')?.value || '',
-        grade: document.getElementById('p_grade')?.value || '',
-        father_first_name: document.getElementById('p_father_first')?.value || '',
-        father_middle_name: document.getElementById('p_father_middle')?.value || '',
-        father_last_name: document.getElementById('p_father_last')?.value || '',
-        father_email: document.getElementById('p_father_email')?.value || '',
-        father_phone: document.getElementById('p_father_phone')?.value || '',
-        mother_first_name: document.getElementById('p_mother_first')?.value || '',
-        mother_last_name: document.getElementById('p_mother_last')?.value || '',
-        mother_phone: document.getElementById('p_mother_phone')?.value || '',
-        emergency_name: document.getElementById('p_emg_name')?.value || '',
-        emergency_phone: document.getElementById('p_emg_phone')?.value || '',
-        emergency_relationship: document.getElementById('p_emg_rel')?.value || '',
-        heard_about: document.getElementById('p_heard')?.value || '',
-        previous_school: document.getElementById('p_prev_school')?.value || '',
-        special_needs: document.getElementById('p_special')?.value || '',
-        comments: document.getElementById('p_comments')?.value || ''
-      };
-
-      // Initialize EmailJS before sending
-      emailjs.init('gYiHBKLQSOxt1Sfal');
-
-      emailjs.send('service_1g7cfrl', 'template_tiqzn2e', params)
-        .then(function(response) {
-          console.log('SUCCESS!', response.status, response.text);
-          document.getElementById('popup-admission-form').style.display = 'none';
-          document.getElementById('popup-success').classList.add('show');
-        })
-        .catch(function(error) {
-          console.error('FAILED...', error);
-          btn.disabled = false;
-          btn.textContent = 'Submit Admission';
-          alert('Something went wrong. Please try again or email us at falahacademywa@gmail.com');
-        });
+    function closeAdmissionPopup() {
+      document.getElementById('admission-popup').classList.remove('open');
+      document.body.classList.remove('popup-open');
+      clearAllErrors();
     }
+
+    document.getElementById('admission-popup').addEventListener('click', function(e) {
+      if (e.target === this) closeAdmissionPopup();
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeAdmissionPopup();
+    });
+
   </script>
 
   <script>
