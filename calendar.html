@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Academic Calendar | Falah Academy — Kent WA</title>
+  <meta name="description" content="Falah Academy Academic Calendar for 2025-2026 and 2026-2027. School holidays, Islamic dates, PTA meetings and more." />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+  <style>
+    /* ---- ENHANCED CALENDAR ---- */
+    .cal-cells { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+
+    .cal-cell {
+      min-height: 64px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 4px 2px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: default;
+      transition: all 0.15s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cal-cell .cal-date { font-weight: 600; font-size: 13px; line-height: 1.2; margin-bottom: 2px; }
+    .cal-cell .cal-event-label {
+      font-size: 9px;
+      text-align: center;
+      line-height: 1.2;
+      font-weight: 500;
+      word-break: break-word;
+      max-width: 100%;
+      padding: 0 2px;
+    }
+
+    .cal-cell.other-month { background: #f8f9fb; color: #c0c8d8; }
+    .cal-cell.other-month .cal-date { color: #c0c8d8; }
+
+    .cal-cell.friday-cell { background: #f0f4ff; }
+    .cal-cell.friday-cell .cal-date { color: #5a78b8; }
+    .cal-cell.friday-cell .cal-event-label { color: #5a78b8; }
+
+    .cal-cell.weekend { background: #f8f9fb; }
+    .cal-cell.weekend .cal-date { color: #a0a8b8; }
+
+    .cal-cell.today { background: #e8eef8; }
+    .cal-cell.today .cal-date { color: var(--royal); }
+
+    .cal-cell.school-start { background: #e8f5e9; cursor: pointer; }
+    .cal-cell.school-start .cal-date { color: #1b5e20; }
+    .cal-cell.school-start .cal-event-label { color: #2e7d32; }
+
+    .cal-cell.school-end { background: #fff3e0; cursor: pointer; }
+    .cal-cell.school-end .cal-date { color: #bf360c; }
+    .cal-cell.school-end .cal-event-label { color: #e65100; }
+
+    .cal-cell.school-off { background: #fdecea; cursor: pointer; }
+    .cal-cell.school-off .cal-date { color: #b71c1c; }
+    .cal-cell.school-off .cal-event-label { color: #c62828; }
+
+    .cal-cell.islamic { background: #fffde7; cursor: pointer; }
+    .cal-cell.islamic .cal-date { color: #f57f17; }
+    .cal-cell.islamic .cal-event-label { color: #f57f17; }
+
+    .cal-cell.event { background: #e8eef8; cursor: pointer; }
+    .cal-cell.event .cal-date { color: var(--royal); }
+    .cal-cell.event .cal-event-label { color: var(--royal); }
+
+    .cal-cell.has-event:hover { transform: scale(1.05); box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 2; }
+
+    /* Month grid layout */
+    .months-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 2rem;
+    }
+
+    .month-block { background: white; border: 0.5px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .month-title {
+      background: var(--navy); color: white;
+      padding: 0.7rem 1rem;
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem; font-weight: 500;
+    }
+    .month-days-header {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      background: #f0f2f5; padding: 4px 6px;
+    }
+    .month-day-name {
+      text-align: center; font-size: 10px; font-weight: 600;
+      color: var(--text-muted); padding: 4px 0;
+      text-transform: uppercase; letter-spacing: 0.3px;
+    }
+    .month-day-name.friday { color: var(--royal); }
+    .month-cells { padding: 6px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+
+    /* Year tabs */
+    .year-tabs { display: flex; gap: 0; margin-bottom: 2rem; border: 0.5px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .year-tab {
+      flex: 1; padding: 12px; text-align: center; font-size: 14px;
+      cursor: pointer; color: var(--text-muted); font-weight: 500;
+      background: white; border: none; font-family: 'Source Sans 3', sans-serif;
+      transition: all 0.2s;
+    }
+    .year-tab.active { background: var(--navy); color: white; }
+    .year-content { display: none; }
+    .year-content.active { display: block; }
+
+    /* Print styles */
+    @media print {
+      .navbar, .page-hero, .footer, #back-to-top, .cal-actions, .year-tabs, .announcement-banner { display: none !important; }
+      .months-grid { grid-template-columns: repeat(2, 1fr); }
+      .cal-cell { min-height: 50px; }
+      .cal-cell .cal-event-label { font-size: 8px; }
+    }
+
+    @media (max-width: 768px) {
+      .months-grid { grid-template-columns: 1fr; }
+      .cal-cell { min-height: 48px; }
+      .cal-cell .cal-event-label { font-size: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="announcement-banner"><span class="banner-text"></span><span class="banner-arrow">→</span><button class="banner-close">✕</button></div>
+
+  <nav class="navbar">
+    <a href="index.html" class="nav-logo">
+      <img src="images/logo.jpg" alt="Falah Academy Logo" loading="lazy" />
+      <div class="nav-brand">
+        <span class="nav-brand-name">Falah Academy</span>
+        <span class="nav-brand-tagline">Kent's First Full-Time Islamic School</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="index.html" class="nav-link">Home</a>
+      <a href="about.html" class="nav-link">About Us</a>
+      <a href="programs.html" class="nav-link">Programs</a>
+      <div class="nav-dropdown">
+        <a href="admissions.html" class="nav-link nav-dropdown-toggle">Admissions ▾</a>
+        <div class="nav-dropdown-menu">
+          <a href="admissions.html#enroll" class="nav-dropdown-item">Admission Form</a>
+          <a href="calendar.html" class="nav-dropdown-item">Academic Calendar</a>
+        </div>
+      </div>
+      <a href="events.html" class="nav-link">Events</a>
+      <a href="contact.html" class="nav-link">Contact</a>
+      <a href="admissions.html#enroll" class="nav-link nav-enroll">Apply Now</a>
+    </div>
+    <div class="hamburger"><span></span><span></span><span></span></div>
+  </nav>
+
+  <div class="page-hero">
+    <div class="page-hero-content">
+      <h1>Academic Calendar</h1>
+      <p>School dates, holidays, Islamic observances and events for both academic years.</p>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="section-inner">
+
+      <!-- Year Tabs -->
+      <div class="year-tabs fade-in">
+        <button class="year-tab" data-year="2025-2026" onclick="switchYear('2025-2026')">Academic Year 2025–2026</button>
+        <button class="year-tab active" data-year="2026-2027" onclick="switchYear('2026-2027')">Academic Year 2026–2027</button>
+      </div>
+
+      <!-- Legend -->
+      <div class="cal-legend fade-in" style="margin-bottom:2rem;background:white;border:0.5px solid var(--border);border-radius:10px;padding:1rem 1.5rem;">
+        <div class="legend-item"><div class="legend-dot" style="background:#e8f5e9;border:1px solid #2e7d32;"></div> First Day of School</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#fff3e0;border:1px solid #bf360c;"></div> Last Day of School</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#fdecea;border:1px solid #b71c1c;"></div> School Off / Holiday</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#fffde7;border:1px solid #f57f17;"></div> Islamic Date ☽</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#e8eef8;border:1px solid #2b5cb8;"></div> School Event</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f0f4ff;border:1px solid #5a78b8;"></div> Friday — No School</div>
+      </div>
+
+      <!-- 2025-2026 -->
+      <div class="year-content" id="year-2025-2026">
+        <div class="months-grid" id="months-2025-2026"></div>
+      </div>
+
+      <!-- 2026-2027 -->
+      <div class="year-content active" id="year-2026-2027">
+        <div class="months-grid" id="months-2026-2027"></div>
+      </div>
+
+      <!-- Actions -->
+      <div class="cal-actions fade-in" style="margin-top:2rem;">
+        <button class="btn-outline-navy" onclick="window.print()"><i class="ti ti-printer"></i> Print Calendar</button>
+        <button class="btn-primary" onclick="downloadCalAsPDF()"><i class="ti ti-download"></i> Download as PDF</button>
+      </div>
+
+      <p style="font-size:0.8rem;color:var(--text-muted);margin-top:1rem;font-style:italic;">
+        ☽ Islamic dates (Ramadan, Eid) are subject to moon sighting and may vary by 1–2 days.
+      </p>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div><div class="footer-brand">Falah Academy</div><p class="footer-text">Empowering Minds, Enlightening Futures.<br>Kent's First Full-Time Islamic School.<br><br>📍 Al Huda Islamic Center<br>25650 101st Ave SE, Kent, WA 98030</p><div class="footer-social"><a href="#" aria-label="Facebook"><i class="ti ti-brand-facebook"></i></a><a href="#" aria-label="Instagram"><i class="ti ti-brand-instagram"></i></a></div></div>
+        <div><div class="footer-heading">Quick Links</div><a href="index.html" class="footer-link">Home</a><a href="about.html" class="footer-link">About Us</a><a href="programs.html" class="footer-link">Programs</a><a href="admissions.html" class="footer-link">Admissions</a><a href="calendar.html" class="footer-link">Academic Calendar</a><a href="contact.html" class="footer-link">Contact</a></div>
+        <div><div class="footer-heading">Admissions</div><a href="admissions.html#enroll" class="footer-link">Apply Now</a><a href="calendar.html" class="footer-link">Academic Calendar</a><a href="programs.html" class="footer-link">Our Programs</a><a href="privacy.html" class="footer-link">Privacy Policy</a></div>
+        <div><div class="footer-heading">Contact Us</div><p class="footer-text">(301) 919-0106<br>falahacademywa@gmail.com</p><p class="footer-text" style="margin-top:0.8rem;">Mon–Thu<br>9:00 AM – 2:00 PM</p></div>
+      </div>
+      <div class="footer-bottom">
+        <span class="footer-copy">© 2025 Falah Academy. All rights reserved.</span>
+        <span class="footer-disc">Falah Academy admits students of any race, color, and national or ethnic origin.</span>
+      </div>
+    </div>
+  </footer>
+
+  <button id="back-to-top" aria-label="Back to top">↑</button>
+
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    // ---- ENHANCED CALENDAR RENDERING ----
+    const calData = {
+      '2025-2026': {
+        '2025-09-02': { type: 'school-start', label: 'First Day' },
+        '2025-11-11': { type: 'school-off', label: 'Veterans Day' },
+        '2025-11-19': { type: 'event', label: 'PTA Meeting' },
+        '2025-11-27': { type: 'school-off', label: 'Thanksgiving' },
+        '2025-11-28': { type: 'school-off', label: 'Thanksgiving' },
+        '2025-12-22': { type: 'school-off', label: 'Winter Break' },
+        '2025-12-23': { type: 'school-off', label: 'Winter Break' },
+        '2025-12-24': { type: 'school-off', label: 'Winter Break' },
+        '2025-12-25': { type: 'school-off', label: 'Winter Break' },
+        '2025-12-26': { type: 'school-off', label: 'Winter Break' },
+        '2025-12-29': { type: 'school-off', label: 'Winter Break' },
+        '2025-12-30': { type: 'school-off', label: 'Winter Break' },
+        '2025-12-31': { type: 'school-off', label: 'Winter Break' },
+        '2026-01-01': { type: 'school-off', label: 'Winter Break' },
+        '2026-01-02': { type: 'school-off', label: 'Winter Break' },
+        '2026-01-19': { type: 'school-off', label: 'MLK Day' },
+        '2026-02-18': { type: 'islamic', label: 'Ramadan ☽' },
+        '2026-03-16': { type: 'islamic', label: 'Eid Break ☽' },
+        '2026-03-17': { type: 'school-off', label: 'Eid Break' },
+        '2026-03-18': { type: 'school-off', label: 'Eid Break' },
+        '2026-03-19': { type: 'school-off', label: 'Eid Break' },
+        '2026-03-20': { type: 'school-off', label: 'Eid Break' },
+        '2026-03-22': { type: 'school-off', label: 'Eid Break' },
+        '2026-05-06': { type: 'event', label: 'PTA Meeting' },
+        '2026-05-25': { type: 'school-off', label: 'Memorial Day' },
+        '2026-05-28': { type: 'islamic', label: 'Eid Adha ☽' },
+        '2026-05-29': { type: 'school-off', label: 'Eid Adha' },
+        '2026-05-30': { type: 'school-off', label: 'Eid Adha' },
+        '2026-06-17': { type: 'school-end', label: 'Last Day' },
+      },
+      '2026-2027': {
+        '2026-08-26': { type: 'school-start', label: 'First Day' },
+        '2026-09-07': { type: 'school-off', label: 'Labor Day' },
+        '2026-11-11': { type: 'school-off', label: 'Veterans Day' },
+        '2026-11-18': { type: 'event', label: 'PTA Meeting' },
+        '2026-11-26': { type: 'school-off', label: 'Thanksgiving' },
+        '2026-11-27': { type: 'school-off', label: 'Thanksgiving' },
+        '2026-12-24': { type: 'school-off', label: 'Winter Break' },
+        '2026-12-25': { type: 'school-off', label: 'Winter Break' },
+        '2026-12-28': { type: 'school-off', label: 'Winter Break' },
+        '2026-12-29': { type: 'school-off', label: 'Winter Break' },
+        '2026-12-30': { type: 'school-off', label: 'Winter Break' },
+        '2026-12-31': { type: 'school-off', label: 'Winter Break' },
+        '2027-01-01': { type: 'school-off', label: 'Winter Break' },
+        '2027-01-02': { type: 'school-off', label: 'Winter Break' },
+        '2027-01-03': { type: 'school-off', label: 'Winter Break' },
+        '2027-01-18': { type: 'school-off', label: 'MLK Day' },
+        '2027-02-07': { type: 'islamic', label: 'Ramadan ☽' },
+        '2027-03-01': { type: 'islamic', label: 'Eid Break ☽' },
+        '2027-03-02': { type: 'school-off', label: 'Eid Break' },
+        '2027-03-03': { type: 'school-off', label: 'Eid Break' },
+        '2027-03-04': { type: 'school-off', label: 'Eid Break' },
+        '2027-03-07': { type: 'school-off', label: 'Eid Break' },
+        '2027-03-08': { type: 'school-off', label: 'Eid Break' },
+        '2027-03-09': { type: 'school-off', label: 'Eid Break' },
+        '2027-03-10': { type: 'school-off', label: 'Eid Break' },
+        '2027-03-11': { type: 'school-off', label: 'Eid Break' },
+        '2027-03-12': { type: 'school-off', label: 'Eid Break' },
+        '2027-03-13': { type: 'school-off', label: 'Eid Break' },
+        '2027-03-14': { type: 'school-off', label: 'Eid Break' },
+        '2027-05-06': { type: 'event', label: 'PTA Meeting' },
+        '2027-05-15': { type: 'islamic', label: 'Eid Adha ☽' },
+        '2027-05-16': { type: 'school-off', label: 'Eid Adha' },
+        '2027-05-17': { type: 'school-off', label: 'Eid Adha' },
+        '2027-05-18': { type: 'school-off', label: 'Eid Adha' },
+        '2027-05-31': { type: 'school-off', label: 'Memorial Day' },
+        '2027-06-24': { type: 'school-end', label: 'Last Day' },
+      }
+    };
+
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+    function renderAllMonths(yearKey, containerId) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      const events = calData[yearKey] || {};
+      const today = new Date();
+
+      // Determine months to show
+      const months = yearKey === '2025-2026'
+        ? [[2025,8],[2025,9],[2025,10],[2025,11],[2026,0],[2026,1],[2026,2],[2026,3],[2026,4],[2026,5],[2026,6],[2026,7]]
+        : [[2026,7],[2026,8],[2026,9],[2026,10],[2026,11],[2027,0],[2027,1],[2027,2],[2027,3],[2027,4],[2027,5],[2027,6]];
+
+      container.innerHTML = months.map(([year, month]) => {
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const startOffset = firstDay === 0 ? 6 : firstDay - 1;
+        const prevDays = new Date(year, month, 0).getDate();
+
+        let cells = '';
+
+        // Previous month
+        for (let i = startOffset - 1; i >= 0; i--) {
+          cells += `<div class="cal-cell other-month"><span class="cal-date">${prevDays - i}</span></div>`;
+        }
+
+        // Current month
+        for (let d = 1; d <= daysInMonth; d++) {
+          const dateObj = new Date(year, month, d);
+          const dayOfWeek = dateObj.getDay();
+          const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+          const event = events[dateStr];
+          const isToday = dateObj.toDateString() === today.toDateString();
+          const isFriday = dayOfWeek === 5;
+          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+          let cls = 'cal-cell';
+          let label = '';
+
+          if (event) {
+            cls += ` ${event.type} has-event`;
+            label = `<span class="cal-event-label">${event.label}</span>`;
+          } else if (isFriday) {
+            cls += ' friday-cell';
+            label = `<span class="cal-event-label">No School</span>`;
+          } else if (isWeekend) {
+            cls += ' weekend';
+          }
+          if (isToday) cls += ' today';
+
+          cells += `<div class="${cls}"><span class="cal-date">${d}</span>${label}</div>`;
+        }
+
+        // Next month
+        const totalCells = Math.ceil((startOffset + daysInMonth) / 7) * 7;
+        for (let i = 1; i <= totalCells - startOffset - daysInMonth; i++) {
+          cells += `<div class="cal-cell other-month"><span class="cal-date">${i}</span></div>`;
+        }
+
+        return `
+          <div class="month-block">
+            <div class="month-title">${monthNames[month]} ${year}</div>
+            <div class="month-days-header">
+              <div class="month-day-name">Mon</div>
+              <div class="month-day-name">Tue</div>
+              <div class="month-day-name">Wed</div>
+              <div class="month-day-name">Thu</div>
+              <div class="month-day-name friday">Fri</div>
+              <div class="month-day-name">Sat</div>
+              <div class="month-day-name">Sun</div>
+            </div>
+            <div class="month-cells">${cells}</div>
+          </div>`;
+      }).join('');
+    }
+
+    function switchYear(year) {
+      document.querySelectorAll('.year-tab').forEach(t => t.classList.toggle('active', t.dataset.year === year));
+      document.querySelectorAll('.year-content').forEach(c => c.classList.remove('active'));
+      document.getElementById('year-' + year).classList.add('active');
+    }
+
+    function downloadCalAsPDF() {
+      alert('To download as PDF:\n1. Press Ctrl+P (or Cmd+P on Mac)\n2. Change destination to "Save as PDF"\n3. Click Save');
+    }
+
+    // Render both years on load
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAllMonths('2025-2026', 'months-2025-2026');
+      renderAllMonths('2026-2027', 'months-2026-2027');
+    });
+  </script>
+</body>
+</html>
