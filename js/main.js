@@ -96,18 +96,15 @@ function initCountdown() {
     if (now < schoolStart) {
       const diff = schoolStart - now;
       const days = Math.floor(diff / 86400000);
-      const hours = Math.floor((diff % 86400000) / 3600000);
-      const mins = Math.floor((diff % 3600000) / 60000);
-      const secs = Math.floor((diff % 60000) / 1000);
       container.innerHTML = `
         <div class="countdown-icon">🌙</div>
         <h2 class="countdown-title">First Day of School</h2>
         <p class="countdown-subtitle">Academic Year 2026–2027 begins August 26, 2026</p>
         <div class="countdown-boxes">
-          <div class="countdown-box"><span class="countdown-num">${String(days).padStart(2,'0')}</span><span class="countdown-label">Days</span></div>
-          <div class="countdown-box"><span class="countdown-num">${String(hours).padStart(2,'0')}</span><span class="countdown-label">Hours</span></div>
-          <div class="countdown-box"><span class="countdown-num">${String(mins).padStart(2,'0')}</span><span class="countdown-label">Minutes</span></div>
-          <div class="countdown-box"><span class="countdown-num">${String(secs).padStart(2,'0')}</span><span class="countdown-label">Seconds</span></div>
+          <div class="countdown-box" style="min-width:140px;padding:1.5rem 2rem;">
+            <span class="countdown-num" style="font-size:4rem;">${String(days).padStart(2,'0')}</span>
+            <span class="countdown-label" style="font-size:13px;letter-spacing:2px;">Days to Go</span>
+          </div>
         </div>`;
     } else if (now >= schoolStart && now <= schoolEnd) {
       container.innerHTML = `
