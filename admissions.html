@@ -212,51 +212,18 @@
   </section>
 
 
-  <!-- ACADEMIC CALENDARS -->
-  <section class="section" id="calendar">
-    <div class="section-inner">
-      <p class="section-title fade-in">Academic Calendars</p>
-      <div class="section-divider fade-in"></div>
-      <div class="calendar-wrap fade-in" id="calendar-wrap">
-        <div class="cal-year-tabs">
-          <button class="cal-year-tab" data-year="2025-2026" onclick="switchCalYear('2025-2026')">Academic Year 2025–2026</button>
-          <button class="cal-year-tab active" data-year="2026-2027" onclick="switchCalYear('2026-2027')">Academic Year 2026–2027</button>
-        </div>
-        <div class="cal-header">
-          <div class="cal-nav">
-            <button onclick="calPrev()" aria-label="Previous month">◀</button>
-            <span id="cal-month-label">Loading...</span>
-            <button onclick="calNext()" aria-label="Next month">▶</button>
-          </div>
-        </div>
-        <div class="cal-grid">
-          <div class="cal-days-header">
-            <div class="cal-day-name">Mon</div>
-            <div class="cal-day-name">Tue</div>
-            <div class="cal-day-name">Wed</div>
-            <div class="cal-day-name">Thu</div>
-            <div class="cal-day-name friday">Fri</div>
-            <div class="cal-day-name">Sat</div>
-            <div class="cal-day-name">Sun</div>
-          </div>
-          <div class="cal-cells" id="cal-cells"></div>
-        </div>
-        <div class="cal-legend">
-          <div class="legend-item"><div class="legend-dot" style="background:#e8f5e9;border:1px solid #2e7d32;"></div> First Day</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#fff3e0;border:1px solid #bf360c;"></div> Last Day</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#fdecea;border:1px solid #b71c1c;"></div> School Off</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#fffde7;border:1px solid #f57f17;"></div> Islamic Date ☽</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#e8eef8;border:1px solid #2b5cb8;"></div> School Event</div>
-          <div class="legend-item"><div class="legend-dot" style="background:#f5f6fa;border:1px solid #c0c8d8;"></div> Friday — No School</div>
-        </div>
-        <div class="cal-actions">
-          <button class="btn-outline-navy" onclick="printCalendar()"><i class="ti ti-printer" aria-hidden="true"></i> Print Calendar</button>
-          <button class="btn-primary" onclick="downloadCalendar()"><i class="ti ti-download" aria-hidden="true"></i> Download as PDF</button>
-        </div>
-      </div>
-      <p style="font-size:0.8rem;color:var(--text-muted);margin-top:1rem;font-style:italic;">☽ Islamic dates (Ramadan, Eid) are subject to moon sighting and may vary by 1–2 days.</p>
+  <!-- CALENDAR LINK -->
+  <section class="section section-alt">
+    <div class="section-inner" style="text-align:center;">
+      <p class="section-title fade-in">Academic Calendar</p>
+      <div class="section-divider fade-in" style="margin:0.5rem auto 1.5rem;"></div>
+      <p style="color:var(--text-muted);font-size:0.95rem;margin-bottom:2rem;max-width:500px;margin-left:auto;margin-right:auto;">
+        View school dates, holidays, Islamic observances and events for both academic years.
+      </p>
+      <a href="calendar.html" class="btn-primary"><i class="ti ti-calendar-event"></i> View Academic Calendar</a>
     </div>
   </section>
+
 
   <!-- FOOTER -->
   <footer class="footer">
