@@ -182,255 +182,29 @@
     </div>
   </section>
 
-  <!-- ENROLLMENT FORM -->
+  <!-- ENROLL NOW -->
   <section class="section section-alt" id="enrollment-form">
     <div class="section-inner">
-      <p class="section-title fade-in">Enrollment Form</p>
-      <div class="section-divider fade-in"></div>
-      <div class="split-2 fade-in" style="align-items:start;">
-
-        <!-- Info Panel -->
-        <div class="contact-info-card">
-          <h3>Important Information</h3>
-          <p style="color:#c0d4f0;font-size:0.86rem;line-height:1.7;margin-bottom:1rem;">Please complete all steps to enroll your child at Falah Academy for Academic Year 2026–27.</p>
-          <div class="contact-row">
-            <i class="ti ti-building contact-icon" aria-hidden="true"></i>
-            <div><span class="contact-label">Location</span><span class="contact-val">Masjid Al-Huda, Kent WA</span></div>
-          </div>
-          <div class="contact-row">
-            <i class="ti ti-clock contact-icon" aria-hidden="true"></i>
-            <div><span class="contact-label">Schedule</span><span class="contact-val">Mon–Thu, 9:00 AM – 2:00 PM</span></div>
-          </div>
-          <div class="contact-row">
-            <i class="ti ti-phone contact-icon" aria-hidden="true"></i>
-            <div><span class="contact-label">Phone</span><span class="contact-val">(301) 919-0106</span></div>
-          </div>
-          <div class="contact-row">
-            <i class="ti ti-mail contact-icon" aria-hidden="true"></i>
-            <div><span class="contact-label">Email</span><span class="contact-val">falahacademywa@gmail.com</span></div>
-          </div>
-          <div style="margin-top:1.2rem;background:rgba(255,255,255,0.06);border-radius:8px;padding:1rem;font-size:0.82rem;color:#a0b4d8;line-height:1.7;">
-            <strong style="color:white;">Note:</strong> We will not send any marketing emails. Your information is safe with us.<br><br>
-            Falah Academy admits students of any race, color, and national or ethnic origin.
-          </div>
-
-          <!-- Ayah 4 -->
-          <div style="margin-top:1.2rem;border-left:3px solid #c9a84c;padding:0.8rem 1rem;background:rgba(255,255,255,0.04);border-radius:0 8px 8px 0;">
-            <p style="color:#e8d5a0;font-size:1rem;line-height:1.8;direction:rtl;margin-bottom:0.4rem;">رَبِّ هَبْ لِي مِن لَّدُنكَ ذُرِّيَّةً طَيِّبَةً</p>
-            <p style="color:#a0c4ff;font-style:italic;font-size:0.82rem;margin-bottom:0.2rem;">"My Lord, grant me from Yourself righteous offspring"</p>
-            <small style="color:#5a7090;font-size:0.75rem;">— Surah Al-Imran (3:38)</small>
-          </div>
-          <div style="margin-top:1rem;">
-            <a href="privacy.html" style="color:#a0c4ff;font-size:0.8rem;">View our Privacy Policy →</a>
-          </div>
-        </div>
-
-        <!-- Multi-Step Form -->
-        <div class="form-section" id="enrollment-form-wrap">
-          <!-- Progress Steps -->
-          <div class="form-steps">
-            <div class="step-wrapper">
-              <div class="step-circle active" id="step-circle-1">1</div>
-              <div class="step-label active" id="step-label-1">Student</div>
-            </div>
-            <div class="step-connector" id="connector-1"></div>
-            <div class="step-wrapper">
-              <div class="step-circle" id="step-circle-2">2</div>
-              <div class="step-label" id="step-label-2">Parents</div>
-            </div>
-            <div class="step-connector" id="connector-2"></div>
-            <div class="step-wrapper">
-              <div class="step-circle" id="step-circle-3">3</div>
-              <div class="step-label" id="step-label-3">Emergency</div>
-            </div>
-            <div class="step-connector" id="connector-3"></div>
-            <div class="step-wrapper">
-              <div class="step-circle" id="step-circle-4">4</div>
-              <div class="step-label" id="step-label-4">Additional</div>
-            </div>
-          </div>
-
-          <form id="enrollment-form-el" novalidate>
-
-            <!-- STEP 1: Student Info -->
-            <div class="form-page active" data-step="1">
-              <p class="form-step-title"><i class="ti ti-user" aria-hidden="true"></i> Student Information</p>
-              <div class="form-grid-3">
-                <div class="form-group">
-                  <label class="form-label" for="student_first_name">First Name <span class="required">*</span></label>
-                  <input type="text" id="student_first_name" class="form-input" required placeholder="First name" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="student_middle_name">Middle Name</label>
-                  <input type="text" id="student_middle_name" class="form-input" placeholder="Middle name" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="student_last_name">Last Name <span class="required">*</span></label>
-                  <input type="text" id="student_last_name" class="form-input" required placeholder="Last name" />
-                </div>
-              </div>
-              <div class="form-grid-2">
-                <div class="form-group">
-                  <label class="form-label">Gender <span class="required">*</span></label>
-                  <div class="form-radio-group">
-                    <label class="form-radio"><input type="radio" name="gender" value="Male" required /> Male</label>
-                    <label class="form-radio"><input type="radio" name="gender" value="Female" /> Female</label>
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="date_of_birth">Date of Birth <span class="required">*</span></label>
-                  <input type="date" id="date_of_birth" class="form-input" required />
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="address">Home Address <span class="required">*</span></label>
-                <input type="text" id="address" class="form-input" required placeholder="Street address, City, State, ZIP" />
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="grade">Grade Applying For <span class="required">*</span></label>
-                <select id="grade" class="form-select" required>
-                  <option value="">Please select</option>
-                  <option value="Pre-K (Age 4)">Pre-K (Age 4)</option>
-                  <option value="Kindergarten (Age 5)">Kindergarten (Age 5)</option>
-                  <option value="Grade 1 (Age 6)">Grade 1 (Age 6)</option>
-                </select>
-              </div>
-              <div class="form-nav">
-                <span></span>
-                <button type="button" class="btn-primary" onclick="nextStep()">Next: Parent Info →</button>
-              </div>
-            </div>
-
-            <!-- STEP 2: Parent Info -->
-            <div class="form-page" data-step="2">
-              <p class="form-step-title"><i class="ti ti-users" aria-hidden="true"></i> Parent Information</p>
-              <div class="form-grid-3">
-                <div class="form-group">
-                  <label class="form-label" for="father_first_name">Father's First Name <span class="required">*</span></label>
-                  <input type="text" id="father_first_name" class="form-input" required placeholder="First name" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="father_middle_name">Father's Middle Name</label>
-                  <input type="text" id="father_middle_name" class="form-input" placeholder="Middle name" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="father_last_name">Father's Last Name <span class="required">*</span></label>
-                  <input type="text" id="father_last_name" class="form-input" required placeholder="Last name" />
-                </div>
-              </div>
-              <div class="form-grid-2">
-                <div class="form-group">
-                  <label class="form-label" for="father_email">Father's Email <span class="required">*</span></label>
-                  <input type="email" id="father_email" class="form-input" required placeholder="email@example.com" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="father_phone">Father's Phone <span class="required">*</span></label>
-                  <input type="tel" id="father_phone" class="form-input" required placeholder="(000) 000-0000" />
-                </div>
-              </div>
-              <div class="form-grid-3">
-                <div class="form-group">
-                  <label class="form-label" for="mother_first_name">Mother's First Name <span class="required">*</span></label>
-                  <input type="text" id="mother_first_name" class="form-input" required placeholder="First name" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="mother_last_name">Mother's Last Name <span class="required">*</span></label>
-                  <input type="text" id="mother_last_name" class="form-input" required placeholder="Last name" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="mother_phone">Mother's Phone <span class="required">*</span></label>
-                  <input type="tel" id="mother_phone" class="form-input" required placeholder="(000) 000-0000" />
-                </div>
-              </div>
-              <div class="form-nav">
-                <button type="button" class="btn-outline-navy" onclick="prevStep()">← Back</button>
-                <button type="button" class="btn-primary" onclick="nextStep()">Next: Emergency Contact →</button>
-              </div>
-            </div>
-
-            <!-- STEP 3: Emergency Contact -->
-            <div class="form-page" data-step="3">
-              <p class="form-step-title"><i class="ti ti-alert-circle" aria-hidden="true"></i> Emergency Contact</p>
-              <div class="form-grid-2">
-                <div class="form-group">
-                  <label class="form-label" for="emergency_name">Contact Full Name <span class="required">*</span></label>
-                  <input type="text" id="emergency_name" class="form-input" required placeholder="Full name" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="emergency_phone">Contact Phone <span class="required">*</span></label>
-                  <input type="tel" id="emergency_phone" class="form-input" required placeholder="(000) 000-0000" />
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="emergency_relationship">Relationship to Student <span class="required">*</span></label>
-                <select id="emergency_relationship" class="form-select" required>
-                  <option value="">Please select</option>
-                  <option value="Father">Father</option>
-                  <option value="Mother">Mother</option>
-                  <option value="Grandparent">Grandparent</option>
-                  <option value="Uncle">Uncle</option>
-                  <option value="Aunt">Aunt</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-              <div class="form-nav">
-                <button type="button" class="btn-outline-navy" onclick="prevStep()">← Back</button>
-                <button type="button" class="btn-primary" onclick="nextStep()">Next: Additional Info →</button>
-              </div>
-            </div>
-
-            <!-- STEP 4: Additional Info -->
-            <div class="form-page" data-step="4">
-              <p class="form-step-title"><i class="ti ti-info-circle" aria-hidden="true"></i> Additional Information</p>
-              <div class="form-group">
-                <label class="form-label" for="heard_about">How did you hear about us?</label>
-                <select id="heard_about" class="form-select">
-                  <option value="">Please select</option>
-                  <option value="Google">Google</option>
-                  <option value="Facebook">Facebook</option>
-                  <option value="Friend or Family">Friend or Family</option>
-                  <option value="Masjid">Masjid</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="previous_school">Previous School or Preschool Attended</label>
-                <input type="text" id="previous_school" class="form-input" placeholder="Name of school (if applicable)" />
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="special_needs">Any Special Needs or Accommodations?</label>
-                <textarea id="special_needs" class="form-textarea" placeholder="Please describe any special needs or accommodations required..."></textarea>
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="enrollment_comments">Additional Comments</label>
-                <textarea id="enrollment_comments" class="form-textarea" placeholder="Any additional information you'd like to share..."></textarea>
-              </div>
-              <div class="form-group">
-                <label class="form-checkbox">
-                  <input type="checkbox" id="agreement" required />
-                  I confirm that I am enrolling my child at Falah Academy for Academic Year 2026–2027 and agree to the terms and conditions. I understand that Falah Academy will not send any marketing emails.
-                </label>
-              </div>
-              <div class="form-nav">
-                <button type="button" class="btn-outline-navy" onclick="prevStep()">← Back</button>
-                <button type="submit" class="btn-primary" id="submit-enrollment-btn" onclick="submitEnrollmentForm(event)">Submit Enrollment →</button>
-              </div>
-            </div>
-
-          </form>
-        </div>
-
-        <!-- Success Message -->
-        <div class="form-success" id="enrollment-success">
-          <div class="form-success-icon">🎉</div>
-          <h3>JazakAllah Khair!</h3>
-          <p>Your enrollment application has been submitted successfully. Our team will review your application and reach out within 3–5 business days.<br><br>For any questions, please contact us at <strong>falahacademywa@gmail.com</strong> or <strong>(301) 919-0106</strong>.</p>
-          <a href="index.html" class="btn-primary" style="margin-top:1.5rem;display:inline-block;">Return to Home</a>
-        </div>
-
+      <div style="text-align:center;padding:2rem 0;">
+        <p class="section-title fade-in">Ready to Enroll?</p>
+        <div class="section-divider fade-in" style="margin:0.5rem auto 1.5rem;"></div>
+        <p style="color:var(--text-muted);font-size:0.95rem;margin-bottom:2rem;max-width:500px;margin-left:auto;margin-right:auto;">
+          Complete our simple 4-step enrollment form to secure your child's spot at Falah Academy for Academic Year 2026–2027.
+        </p>
+        <button onclick="openEnrollmentPopup()" class="btn-primary" style="font-size:1rem;padding:14px 36px;">
+          <i class="ti ti-forms" aria-hidden="true"></i> Start Enrollment Form
+        </button>
+        <p style="margin-top:1rem;font-size:0.82rem;color:var(--text-muted);">
+          For tuition information please <a href="contact.html" style="color:var(--royal);">contact us directly</a>
+        </p>
+        <p style="margin-top:0.5rem;font-size:0.78rem;color:var(--text-muted);font-style:italic;">
+          We will not send any marketing emails. Your information is safe with us.
+          <a href="privacy.html" style="color:var(--royal);">Privacy Policy</a>
+        </p>
       </div>
     </div>
   </section>
+
 
   <!-- ACADEMIC CALENDARS -->
   <section class="section" id="calendar">
