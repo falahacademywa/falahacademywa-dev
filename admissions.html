@@ -767,6 +767,62 @@
       if (e.key === 'Escape') closeAdmissionPopup();
     });
 
+    function submitPopupForm(e) {
+      e.preventDefault();
+      if (!validatePopupStep(4)) return;
+
+      const btn = document.getElementById('popup-submit-btn');
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+
+      const street   = document.getElementById('p_street')?.value || '';
+      const city     = document.getElementById('p_city')?.value || '';
+      const zipcode  = document.getElementById('p_zipcode')?.value || '';
+      const fullAddr = [street, city, 'WA', zipcode].filter(Boolean).join(', ');
+
+      const params = {
+        student_first_name:       document.getElementById('p_student_first')?.value || '',
+        student_middle_name:      document.getElementById('p_student_middle')?.value || '',
+        student_last_name:        document.getElementById('p_student_last')?.value || '',
+        gender:                   document.querySelector('input[name="p_gender"]:checked')?.value || '',
+        date_of_birth:            document.getElementById('p_dob')?.value || '',
+        address:                  fullAddr,
+        street:                   street,
+        city:                     city,
+        zipcode:                  zipcode,
+        grade:                    document.getElementById('p_grade')?.value || '',
+        father_first_name:        document.getElementById('p_father_first')?.value || '',
+        father_middle_name:       document.getElementById('p_father_middle')?.value || '',
+        father_last_name:         document.getElementById('p_father_last')?.value || '',
+        father_email:             document.getElementById('p_father_email')?.value || '',
+        father_phone:             document.getElementById('p_father_phone')?.value || '',
+        mother_first_name:        document.getElementById('p_mother_first')?.value || '',
+        mother_last_name:         document.getElementById('p_mother_last')?.value || '',
+        mother_phone:             document.getElementById('p_mother_phone')?.value || '',
+        emergency_name:           document.getElementById('p_emg_name')?.value || '',
+        emergency_phone:          document.getElementById('p_emg_phone')?.value || '',
+        emergency_relationship:   document.getElementById('p_emg_rel')?.value || '',
+        heard_about:              document.getElementById('p_heard')?.value || '',
+        previous_school:          document.getElementById('p_prev_school')?.value || '',
+        special_needs:            document.getElementById('p_special')?.value || '',
+        comments:                 document.getElementById('p_comments')?.value || ''
+      };
+
+      emailjs.init('gYiHBKLQSOxt1Sfal');
+      emailjs.send('service_1g7cfrl', 'template_tiqzn2e', params)
+        .then(function(response) {
+          console.log('SUCCESS!', response.status, response.text);
+          document.getElementById('popup-admission-form').style.display = 'none';
+          document.getElementById('popup-success').classList.add('show');
+        })
+        .catch(function(error) {
+          console.error('FAILED...', error);
+          btn.disabled = false;
+          btn.textContent = 'Submit Admission';
+          alert('Something went wrong. Please try again or email us at falahacademywa@gmail.com');
+        });
+    }
+
   </script>
 
   <script>
