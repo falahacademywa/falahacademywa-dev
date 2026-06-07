@@ -370,7 +370,7 @@ function downloadCalendar() {
 let currentStep = 1;
 const totalSteps = 4;
 
-function initEnrollmentForm() {
+function initAdmissionForm() {
   showStep(1);
 }
 
@@ -444,11 +444,11 @@ const EMAILJS_SERVICE_ID = 'service_1g7cfrl';
 const EMAILJS_ENROLLMENT_TEMPLATE = 'template_tiqzn2e';
 const EMAILJS_CONTACT_TEMPLATE = 'template_aczy5tp';
 
-function submitEnrollmentForm(e) {
+function submitAdmissionForm(e) {
   e.preventDefault();
   if (!validateStep(currentStep)) return;
 
-  const btn = document.getElementById('submit-enrollment-btn');
+  const btn = document.getElementById('submit-admission-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Submitting...'; }
 
   const params = {
@@ -473,17 +473,17 @@ function submitEnrollmentForm(e) {
     heard_about: document.getElementById('heard_about')?.value || '',
     previous_school: document.getElementById('previous_school')?.value || '',
     special_needs: document.getElementById('special_needs')?.value || '',
-    comments: document.getElementById('enrollment_comments')?.value || ''
+    comments: document.getElementById('admission_comments')?.value || ''
   };
 
   emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_ENROLLMENT_TEMPLATE, params)
     .then(() => {
-      document.getElementById('enrollment-form-wrap').style.display = 'none';
-      document.getElementById('enrollment-success').classList.add('show');
+      document.getElementById('admission-form-wrap').style.display = 'none';
+      document.getElementById('admission-success').classList.add('show');
     })
     .catch((err) => {
       console.error('EmailJS error:', err);
-      if (btn) { btn.disabled = false; btn.textContent = 'Submit Enrollment'; }
+      if (btn) { btn.disabled = false; btn.textContent = 'Submit Admission'; }
       alert('Something went wrong. Please try again or contact us at falahacademywa@gmail.com');
     });
 }
@@ -522,6 +522,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initScrollAnimations();
   initCountdown();
   initCalendar();
-  initEnrollmentForm();
+  initAdmissionForm();
   initAyaat();
 });
