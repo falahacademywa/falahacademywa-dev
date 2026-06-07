@@ -600,14 +600,20 @@
         comments: document.getElementById('p_comments')?.value || ''
       };
 
+      // Initialize EmailJS before sending
+      emailjs.init('gYiHBKLQSOxt1Sfal');
+
       emailjs.send('service_1g7cfrl', 'template_tiqzn2e', params)
-        .then(() => {
+        .then(function(response) {
+          console.log('SUCCESS!', response.status, response.text);
           document.getElementById('popup-admission-form').style.display = 'none';
           document.getElementById('popup-success').classList.add('show');
         })
-        .catch(() => {
-          btn.disabled = false; btn.textContent = 'Submit Admission';
-          alert('Something went wrong. Please email us at falahacademywa@gmail.com');
+        .catch(function(error) {
+          console.error('FAILED...', error);
+          btn.disabled = false;
+          btn.textContent = 'Submit Admission';
+          alert('Something went wrong. Please try again or email us at falahacademywa@gmail.com');
         });
     }
   </script>
