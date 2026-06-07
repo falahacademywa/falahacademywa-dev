@@ -188,39 +188,36 @@
     </div>
   </section>
 
-  <!-- ENROLL NOW -->
+  <!-- ADMISSION FORM + CALENDAR — SIDE BY SIDE -->
   <section class="section section-alt" id="admission-form">
     <div class="section-inner">
-      <div style="text-align:center;padding:2rem 0;">
-        <p class="section-title fade-in">Admission Form</p>
-        <div class="section-divider fade-in" style="margin:0.5rem auto 1.5rem;"></div>
-        <p style="color:var(--text-muted);font-size:0.95rem;margin-bottom:2rem;max-width:500px;margin-left:auto;margin-right:auto;">
-          Please complete our simple 4-step form to apply for your child's admission at Falah Academy for Academic Year 2026–2027.
-        </p>
-        <button onclick="openAdmissionPopup()" class="btn-primary" style="font-size:1rem;padding:14px 36px;">
-          <i class="ti ti-forms" aria-hidden="true"></i> Admission Form
-        </button>
-        <p style="margin-top:1rem;font-size:0.82rem;color:var(--text-muted);">
-          For tuition information please <a href="contact.html" style="color:var(--royal);">contact us directly</a>
-        </p>
-        <p style="margin-top:0.5rem;font-size:0.78rem;color:var(--text-muted);font-style:italic;">
-          We will not send any marketing emails. Your information is safe with us.
-          <a href="privacy.html" style="color:var(--royal);">Privacy Policy</a>
-        </p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+
+        <!-- Admission Form Card -->
+        <div style="background:white;border:0.5px solid var(--border);border-radius:12px;padding:2rem;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+          <div style="width:56px;height:56px;background:#e8eef8;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;font-size:1.6rem;">📋</div>
+          <p style="font-family:'Playfair Display',serif;color:var(--navy);font-size:1.2rem;margin-bottom:0.5rem;">Admission Form</p>
+          <div style="width:36px;height:3px;background:var(--royal);border-radius:2px;margin:0 auto 1rem;"></div>
+          <p style="color:var(--text-muted);font-size:0.88rem;line-height:1.7;margin-bottom:1.5rem;">Complete our simple 4-step form to apply for your child's admission for Academic Year 2026–2027.</p>
+          <button onclick="openAdmissionPopup()" class="btn-primary" style="width:100%;font-size:0.95rem;">
+            <i class="ti ti-forms" aria-hidden="true"></i> Open Admission Form
+          </button>
+          <p style="margin-top:0.8rem;font-size:0.75rem;color:var(--text-muted);">For tuition info <a href="contact.html" style="color:var(--royal);">contact us</a> · <a href="privacy.html" style="color:var(--royal);">Privacy Policy</a></p>
+        </div>
+
+        <!-- Academic Calendar Card -->
+        <div style="background:white;border:0.5px solid var(--border);border-radius:12px;padding:2rem;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+          <div style="width:56px;height:56px;background:#e8eef8;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:1rem;font-size:1.6rem;">📅</div>
+          <p style="font-family:'Playfair Display',serif;color:var(--navy);font-size:1.2rem;margin-bottom:0.5rem;">Academic Calendar</p>
+          <div style="width:36px;height:3px;background:var(--royal);border-radius:2px;margin:0 auto 1rem;"></div>
+          <p style="color:var(--text-muted);font-size:0.88rem;line-height:1.7;margin-bottom:1.5rem;">View school dates, holidays, Islamic observances and events for both academic years 2025–2026 and 2026–2027.</p>
+          <a href="calendar.html" class="btn-primary" style="width:100%;font-size:0.95rem;text-align:center;display:block;">
+            <i class="ti ti-calendar-event" aria-hidden="true"></i> View Academic Calendar
+          </a>
+          <p style="margin-top:0.8rem;font-size:0.75rem;color:var(--text-muted);">☽ Islamic dates subject to moon sighting</p>
+        </div>
+
       </div>
-    </div>
-  </section>
-
-
-  <!-- CALENDAR LINK -->
-  <section class="section section-alt">
-    <div class="section-inner" style="text-align:center;">
-      <p class="section-title fade-in">Academic Calendar</p>
-      <div class="section-divider fade-in" style="margin:0.5rem auto 1.5rem;"></div>
-      <p style="color:var(--text-muted);font-size:0.95rem;margin-bottom:2rem;max-width:500px;margin-left:auto;margin-right:auto;">
-        View school dates, holidays, Islamic observances and events for both academic years.
-      </p>
-      <a href="calendar.html" class="btn-primary"><i class="ti ti-calendar-event"></i> View Academic Calendar</a>
     </div>
   </section>
 

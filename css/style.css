@@ -731,3 +731,14 @@ html, body {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* Admissions page — form and calendar side by side */
+#admission-form .section-inner > div[style*="grid-template-columns:1fr 1fr"] {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+}
+@media (max-width: 768px) {
+  #admission-form .section-inner > div[style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+}
