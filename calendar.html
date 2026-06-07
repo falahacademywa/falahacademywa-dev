@@ -451,9 +451,21 @@
     }
 
     function switchYear(year) {
+      // Switch calendar tabs
       document.querySelectorAll('.year-tab').forEach(t => t.classList.toggle('active', t.dataset.year === year));
       document.querySelectorAll('.year-content').forEach(c => c.classList.remove('active'));
       document.getElementById('year-' + year).classList.add('active');
+
+      // Switch sync buttons to match selected year
+      const sync2526 = document.getElementById('sync-2025-2026');
+      const sync2627 = document.getElementById('sync-2026-2027');
+      if (year === '2025-2026') {
+        if (sync2526) { sync2526.style.display = 'block'; sync2526.style.opacity = '1'; }
+        if (sync2627) { sync2627.style.display = 'none'; }
+      } else {
+        if (sync2526) { sync2526.style.display = 'none'; }
+        if (sync2627) { sync2627.style.display = 'block'; sync2627.style.opacity = '1'; }
+      }
     }
 
     function downloadCalAsPDF() {
