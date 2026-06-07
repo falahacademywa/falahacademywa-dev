@@ -148,13 +148,18 @@ function initCountdown() {
       const diff = schoolStart - now;
       const days = Math.floor(diff / 86400000);
       container.innerHTML = `
-        <div class="countdown-icon">🌙</div>
-        <h2 class="countdown-title">First Day of School</h2>
-        <p class="countdown-subtitle">Academic Year 2026–2027 begins August 26, 2026</p>
-        <div class="countdown-boxes">
-          <div class="countdown-box" style="min-width:140px;padding:1.5rem 2rem;">
-            <span class="countdown-num" style="font-size:4rem;">${String(days).padStart(2,'0')}</span>
-            <span class="countdown-label" style="font-size:13px;letter-spacing:2px;">Days to Go</span>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:3rem;flex-wrap:wrap;">
+          <div style="flex:1;min-width:200px;text-align:left;">
+            <div style="font-size:1.8rem;margin-bottom:0.5rem;">🌙</div>
+            <h2 class="countdown-title" style="text-align:left;">First Day of School</h2>
+            <p class="countdown-subtitle" style="text-align:left;margin-top:0.4rem;">Academic Year 2026–2027</p>
+            <p style="color:#c9a84c;font-size:0.9rem;margin-top:0.3rem;font-weight:500;">August 26, 2026</p>
+          </div>
+          <div style="flex:0 0 auto;">
+            <div class="countdown-box" style="min-width:160px;padding:1.5rem 2.5rem;text-align:center;">
+              <span class="countdown-num" style="font-size:5rem;">${String(days).padStart(2,'0')}</span>
+              <span class="countdown-label" style="font-size:13px;letter-spacing:2px;margin-top:8px;">Days to Go</span>
+            </div>
           </div>
         </div>`;
     } else if (now >= schoolStart && now <= schoolEnd) {
