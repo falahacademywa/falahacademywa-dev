@@ -177,7 +177,7 @@
         </div>
 
         <!-- 2025-2026 -->
-        <div style="background:rgba(255,255,255,0.06);border-radius:8px;padding:1rem 1.2rem;margin-bottom:1rem;" id="sync-2025-2026">
+        <div style="background:rgba(255,255,255,0.06);border-radius:8px;padding:1rem 1.2rem;margin-bottom:1rem;display:none;" id="sync-2025-2026">
           <p style="color:#c9a84c;font-size:0.85rem;font-weight:600;margin-bottom:0.8rem;">📅 Academic Year 2025–2026</p>
           <div style="display:flex;gap:0.8rem;flex-wrap:wrap;">
             <a href="https://calendar.google.com/calendar/r?cid=https://falahacademywa.github.io/falah-academy-2025-2026.ics" target="_blank" rel="noopener"
@@ -197,7 +197,7 @@
         </div>
 
         <!-- 2026-2027 -->
-        <div style="background:rgba(255,255,255,0.06);border-radius:8px;padding:1rem 1.2rem;" id="sync-2026-2027">
+        <div style="background:rgba(255,255,255,0.06);border-radius:8px;padding:1rem 1.2rem;display:none;" id="sync-2026-2027">
           <p style="color:#c9a84c;font-size:0.85rem;font-weight:600;margin-bottom:0.8rem;">📅 Academic Year 2026–2027</p>
           <div style="display:flex;gap:0.8rem;flex-wrap:wrap;">
             <a href="https://calendar.google.com/calendar/r?cid=https://falahacademywa.github.io/falah-academy-2026-2027.ics" target="_blank" rel="noopener"
@@ -484,16 +484,16 @@
       const activeContent = document.getElementById('year-' + currentYear);
       if (activeContent) activeContent.classList.add('active');
 
-      // 3. Show ALL sync buttons only for current year, hide for other year
-      const syncCurrent = document.getElementById('sync-' + currentYear);
-      const syncOther   = document.getElementById('sync-' + otherYear);
+      // 3. Show sync section only for current year, hide other year completely
+      const sync2526 = document.getElementById('sync-2025-2026');
+      const sync2627 = document.getElementById('sync-2026-2027');
 
-      if (syncCurrent) {
-        syncCurrent.style.display = 'block';
-        syncCurrent.style.opacity = '1';
-      }
-      if (syncOther) {
-        syncOther.style.display = 'none';
+      if (currentYear === '2025-2026') {
+        if (sync2526) { sync2526.style.display = 'block'; sync2526.style.opacity = '1'; }
+        if (sync2627) { sync2627.style.display = 'none'; }
+      } else {
+        if (sync2526) { sync2526.style.display = 'none'; }
+        if (sync2627) { sync2627.style.display = 'block'; sync2627.style.opacity = '1'; }
       }
 
       // 4. Add "Current" gold badge to active tab
