@@ -464,3 +464,202 @@ p { line-height: 1.8; }
   .hero-btns { flex-direction: column; }
   .countdown-boxes { gap: 0.5rem; }
 }
+
+/* ============================================
+   MOBILE FIXES — Phone Portrait
+   ============================================ */
+
+/* Fix horizontal overflow on all pages */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+
+  /* Hero section — stack vertically */
+  .hero-section > div[style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Hide hero image on mobile — show content only */
+  .hero-section > div > div:last-child {
+    display: none !important;
+  }
+
+  /* Reduce hero heading size */
+  .hero-section h1 {
+    font-size: 1.8rem !important;
+  }
+
+  /* Fix page hero on about/programs/admissions */
+  .page-hero[style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+    display: block !important;
+  }
+
+  /* Hide page hero image on mobile */
+  .page-hero > div[style*="border-radius:12px"] {
+    display: none !important;
+  }
+
+  /* Fix all inline 2-column grids */
+  div[style*="grid-template-columns:1fr 1fr"],
+  div[style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Fix 3-column grids */
+  div[style*="grid-template-columns:repeat(3,1fr)"],
+  div[style*="grid-template-columns: repeat(3, 1fr)"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Fix stats row in hero */
+  div[style*="grid-template-columns:repeat(3,1fr)"] {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  /* Fix section padding */
+  .section {
+    padding: 2rem 1rem !important;
+  }
+
+  /* Fix navbar padding */
+  .navbar {
+    padding: 0 1rem !important;
+  }
+
+  /* Fix footer grid */
+  .footer-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
+
+  /* Fix location grid */
+  .location-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Fix cards grids */
+  .cards-3, .cards-4 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Fix split layouts */
+  .split-2, .split-2-rev {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Fix split image height on mobile */
+  .split-img {
+    min-height: 200px !important;
+    height: 200px !important;
+  }
+
+  /* Fix form grids */
+  .form-grid-2, .form-grid-3 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Fix countdown boxes */
+  .countdown-boxes {
+    gap: 0.6rem !important;
+  }
+  .countdown-box {
+    min-width: 65px !important;
+    padding: 0.8rem 0.6rem !important;
+  }
+  .countdown-num {
+    font-size: 1.8rem !important;
+  }
+  .countdown-title {
+    font-size: 1.2rem !important;
+  }
+
+  /* Fix hero buttons */
+  .hero-btns, div[style*="display:flex;gap:12px"] {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  /* Fix ayah block */
+  .ayah-block {
+    padding: 1.2rem !important;
+  }
+  .ayah-arabic {
+    font-size: 1.1rem !important;
+  }
+
+  /* Fix values grid */
+  .cards-4[style*="grid-template-columns:repeat(auto-fit"] {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* Fix contact info card */
+  .contact-info-card {
+    margin-bottom: 1.5rem;
+  }
+
+  /* Fix map embed height */
+  .map-embed {
+    height: 220px !important;
+  }
+
+  /* Fix section title size */
+  .section-title {
+    font-size: 1.4rem !important;
+  }
+
+  /* Fix page hero text */
+  .page-hero h1 {
+    font-size: 1.6rem !important;
+  }
+
+  /* Fix calendar */
+  .cal-cells {
+    gap: 2px !important;
+  }
+  .cal-cell {
+    font-size: 11px !important;
+  }
+  .cal-actions {
+    flex-direction: column !important;
+  }
+  .cal-legend {
+    gap: 0.5rem !important;
+  }
+
+  /* Fix form steps on mobile */
+  .step-connector {
+    width: 24px !important;
+  }
+  .step-label {
+    font-size: 9px !important;
+  }
+
+  /* Fix back to top button */
+  #back-to-top {
+    bottom: 1rem !important;
+    right: 1rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-section h1 {
+    font-size: 1.6rem !important;
+  }
+  .countdown-boxes {
+    gap: 0.4rem !important;
+  }
+  .countdown-box {
+    min-width: 55px !important;
+    padding: 0.6rem 0.4rem !important;
+  }
+  .countdown-num {
+    font-size: 1.5rem !important;
+  }
+  .cards-4[style*="grid-template-columns:repeat(auto-fit"] {
+    grid-template-columns: 1fr !important;
+  }
+}
