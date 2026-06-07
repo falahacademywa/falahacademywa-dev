@@ -801,3 +801,23 @@ html, body {
   .floating-btn { width: 42px; height: 42px; font-size: 1.1rem; }
   .floating-btn::before { display: none; }
 }
+
+/* ---- GRADE CARDS RESPONSIVE GRID ---- */
+.grade-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .grade-cards-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 480px) and (max-width: 768px) {
+  .grade-cards-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
