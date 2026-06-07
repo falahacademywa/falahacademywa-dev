@@ -742,3 +742,62 @@ html, body {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ---- FLOATING SOCIAL BUTTONS ---- */
+.floating-social {
+  position: fixed;
+  bottom: 2rem;
+  left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 997;
+}
+.floating-btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  text-decoration: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+}
+.floating-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+}
+.floating-btn.whatsapp { background: #25D366; color: white; }
+.floating-btn.facebook { background: #1877F2; color: white; }
+
+/* Tooltip on hover */
+.floating-btn::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 54px;
+  background: var(--navy);
+  color: white;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s;
+  font-family: 'Source Sans 3', sans-serif;
+  font-weight: 500;
+  pointer-events: none;
+}
+.floating-btn:hover::before {
+  opacity: 1;
+  visibility: visible;
+}
+
+@media (max-width: 768px) {
+  .floating-social { bottom: 1rem; left: 0.8rem; }
+  .floating-btn { width: 42px; height: 42px; font-size: 1.1rem; }
+  .floating-btn::before { display: none; }
+}
