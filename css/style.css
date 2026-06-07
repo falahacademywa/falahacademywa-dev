@@ -708,3 +708,26 @@ html, body {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* Grades responsive grid */
+.grades-responsive-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 1.5rem;
+}
+
+/* Admissions cards — side by side on desktop, stacked on mobile */
+.admissions-cards-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .grades-responsive-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .admissions-cards-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
