@@ -821,3 +821,43 @@ html, body {
     grid-template-columns: repeat(2, 1fr) !important;
   }
 }
+
+/* ---- SLIM MOBILE FOOTER ---- */
+@media (max-width: 768px) {
+  .footer { padding: 2rem 1.2rem 1rem; }
+
+  /* Stack into 2 columns on mobile */
+  .footer-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 1.2rem !important;
+  }
+
+  /* Falah Academy brand — spans full width */
+  .footer-grid > div:first-child {
+    grid-column: 1 / -1;
+  }
+
+  /* Shorten description on mobile */
+  .footer-grid > div:first-child .footer-text:first-of-type {
+    display: none;
+  }
+
+  /* Hide Admissions column on mobile — links already in Quick Links */
+  .footer-grid > div:nth-child(3) {
+    display: none;
+  }
+
+  /* Smaller font */
+  .footer-link { font-size: 0.78rem !important; margin-bottom: 0.3rem !important; }
+  .footer-text { font-size: 0.78rem !important; }
+  .footer-heading { font-size: 0.65rem !important; margin-bottom: 0.6rem !important; }
+  .footer-brand { font-size: 0.95rem !important; margin-bottom: 0.3rem !important; }
+
+  /* Footer bottom — stack on very small screens */
+  .footer-bottom {
+    flex-direction: column !important;
+    text-align: center;
+    gap: 0.3rem !important;
+  }
+  .footer-copy, .footer-disc { font-size: 0.65rem !important; }
+}
