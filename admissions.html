@@ -8,6 +8,89 @@
   <meta name="keywords" content="Islamic school admissions Kent WA, enroll Islamic school Seattle, Falah Academy admissions, Muslim school enrollment Washington" />
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+
+  <style>
+    /* ---- ENROLLMENT POPUP ---- */
+    .popup-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+      z-index: 9999; display: flex; align-items: center; justify-content: center;
+      opacity: 0; visibility: hidden; transition: all 0.3s ease;
+      padding: 1rem;
+    }
+    .popup-overlay.open { opacity: 1; visibility: visible; }
+    .popup-modal {
+      background: white; border-radius: 16px; width: 100%; max-width: 680px;
+      max-height: 90vh; overflow-y: auto; position: relative;
+      transform: translateY(30px) scale(0.97);
+      transition: transform 0.3s ease;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.4);
+    }
+    .popup-overlay.open .popup-modal { transform: translateY(0) scale(1); }
+    .popup-form-page { display: none; }
+    .popup-form-page.active { display: block; }
+    .popup-header {
+      background: #1a2f5e; padding: 1.2rem 1.5rem;
+      border-radius: 16px 16px 0 0;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .popup-header-left { display: flex; align-items: center; gap: 10px; }
+    .popup-header img { height: 36px; width: 36px; border-radius: 50%; background: white; padding: 2px; object-fit: contain; }
+    .popup-header-title { color: white; font-family: 'Playfair Display', serif; font-size: 1rem; }
+    .popup-header-sub { color: #a0b4d8; font-size: 11px; }
+    .popup-close {
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+      color: white; width: 32px; height: 32px; border-radius: 50%;
+      cursor: pointer; font-size: 16px; display: flex; align-items: center;
+      justify-content: center; transition: background 0.2s; flex-shrink: 0;
+    }
+    .popup-close:hover { background: rgba(255,255,255,0.2); }
+    .popup-progress {
+      padding: 1.2rem 1.5rem 0;
+      background: white;
+    }
+    .popup-steps {
+      display: flex; align-items: flex-start; justify-content: center;
+      gap: 0; margin-bottom: 0.5rem;
+    }
+    .popup-step-wrap { display: flex; flex-direction: column; align-items: center; }
+    .popup-step-circle {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: #d0d7e8; color: #5a6480;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 600; transition: all 0.3s;
+    }
+    .popup-step-circle.active { background: #2b5cb8; color: white; }
+    .popup-step-circle.done { background: #2e7d32; color: white; }
+    .popup-step-label {
+      font-size: 10px; color: #5a6480; margin-top: 5px;
+      white-space: nowrap; text-align: center;
+    }
+    .popup-step-label.active { color: #2b5cb8; font-weight: 500; }
+    .popup-connector {
+      height: 2px; width: 60px; background: #d0d7e8;
+      margin-top: 17px; flex-shrink: 0; transition: background 0.3s;
+    }
+    .popup-connector.done { background: #2e7d32; }
+    .popup-body { padding: 1.5rem; }
+    .popup-step-title {
+      font-family: 'Playfair Display', serif; color: #1a2f5e;
+      font-size: 1.15rem; margin-bottom: 1.2rem;
+      padding-bottom: 0.8rem; border-bottom: 0.5px solid #d0d7e8;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .popup-nav {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 1.5rem; padding-top: 1.2rem;
+      border-top: 0.5px solid #d0d7e8;
+    }
+    .popup-success {
+      display: none; text-align: center; padding: 3rem 2rem;
+    }
+    .popup-success.show { display: block; }
+    .popup-success-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+    body.popup-open { overflow: hidden; }
+  </style>
 </head>
 <body>
 
@@ -442,5 +525,355 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
   <script src="js/main.js"></script>
+
+  <!-- ==================== ENROLLMENT POPUP ==================== -->
+  <div class="popup-overlay" id="enrollment-popup" role="dialog" aria-modal="true" aria-label="Student Enrollment Form">
+    <div class="popup-modal">
+
+      <!-- Header -->
+      <div class="popup-header">
+        <div class="popup-header-left">
+          <img src="images/logo.jpg" alt="Falah Academy" />
+          <div>
+            <div class="popup-header-title">Student Enrollment</div>
+            <div class="popup-header-sub">Academic Year 2026–2027</div>
+          </div>
+        </div>
+        <button class="popup-close" onclick="closeEnrollmentPopup()" aria-label="Close">✕</button>
+      </div>
+
+      <!-- Progress Steps -->
+      <div class="popup-progress">
+        <div class="popup-steps">
+          <div class="popup-step-wrap">
+            <div class="popup-step-circle active" id="pstep-1">1</div>
+            <div class="popup-step-label active" id="plabel-1">Student</div>
+          </div>
+          <div class="popup-connector" id="pconn-1"></div>
+          <div class="popup-step-wrap">
+            <div class="popup-step-circle" id="pstep-2">2</div>
+            <div class="popup-step-label" id="plabel-2">Parents</div>
+          </div>
+          <div class="popup-connector" id="pconn-2"></div>
+          <div class="popup-step-wrap">
+            <div class="popup-step-circle" id="pstep-3">3</div>
+            <div class="popup-step-label" id="plabel-3">Emergency</div>
+          </div>
+          <div class="popup-connector" id="pconn-3"></div>
+          <div class="popup-step-wrap">
+            <div class="popup-step-circle" id="pstep-4">4</div>
+            <div class="popup-step-label" id="plabel-4">Additional</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Body -->
+      <div class="popup-body">
+        <form id="popup-enrollment-form" novalidate>
+
+          <!-- STEP 1: Student -->
+          <div class="popup-form-page active" data-step="1">
+            <p class="popup-step-title"><i class="ti ti-user" aria-hidden="true"></i> Student Information</p>
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label class="form-label" for="p_student_first">First Name <span class="required">*</span></label>
+                <input type="text" id="p_student_first" class="form-input" required placeholder="First name" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="p_student_middle">Middle Name</label>
+                <input type="text" id="p_student_middle" class="form-input" placeholder="Middle name" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="p_student_last">Last Name <span class="required">*</span></label>
+                <input type="text" id="p_student_last" class="form-input" required placeholder="Last name" />
+              </div>
+            </div>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label">Gender <span class="required">*</span></label>
+                <div class="form-radio-group">
+                  <label class="form-radio"><input type="radio" name="p_gender" value="Male" required /> Male</label>
+                  <label class="form-radio"><input type="radio" name="p_gender" value="Female" /> Female</label>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="p_dob">Date of Birth <span class="required">*</span></label>
+                <input type="date" id="p_dob" class="form-input" required />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="p_address">Home Address <span class="required">*</span></label>
+              <input type="text" id="p_address" class="form-input" required placeholder="Street address, City, State, ZIP" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="p_grade">Grade Applying For <span class="required">*</span></label>
+              <select id="p_grade" class="form-select" required>
+                <option value="">Please select</option>
+                <option value="Pre-K (Age 4)">Pre-K (Age 4)</option>
+                <option value="Kindergarten (Age 5)">Kindergarten (Age 5)</option>
+                <option value="Grade 1 (Age 6)">Grade 1 (Age 6)</option>
+              </select>
+            </div>
+            <div class="popup-nav">
+              <span></span>
+              <button type="button" class="btn-primary" onclick="popupNext()">Next: Parent Info →</button>
+            </div>
+          </div>
+
+          <!-- STEP 2: Parents -->
+          <div class="popup-form-page" data-step="2">
+            <p class="popup-step-title"><i class="ti ti-users" aria-hidden="true"></i> Parent Information</p>
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label class="form-label" for="p_father_first">Father's First Name <span class="required">*</span></label>
+                <input type="text" id="p_father_first" class="form-input" required placeholder="First name" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="p_father_middle">Father's Middle Name</label>
+                <input type="text" id="p_father_middle" class="form-input" placeholder="Middle name" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="p_father_last">Father's Last Name <span class="required">*</span></label>
+                <input type="text" id="p_father_last" class="form-input" required placeholder="Last name" />
+              </div>
+            </div>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label" for="p_father_email">Father's Email <span class="required">*</span></label>
+                <input type="email" id="p_father_email" class="form-input" required placeholder="email@example.com" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="p_father_phone">Father's Phone <span class="required">*</span></label>
+                <input type="tel" id="p_father_phone" class="form-input" required placeholder="(000) 000-0000" />
+              </div>
+            </div>
+            <div class="form-grid-3">
+              <div class="form-group">
+                <label class="form-label" for="p_mother_first">Mother's First Name <span class="required">*</span></label>
+                <input type="text" id="p_mother_first" class="form-input" required placeholder="First name" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="p_mother_last">Mother's Last Name <span class="required">*</span></label>
+                <input type="text" id="p_mother_last" class="form-input" required placeholder="Last name" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="p_mother_phone">Mother's Phone <span class="required">*</span></label>
+                <input type="tel" id="p_mother_phone" class="form-input" required placeholder="(000) 000-0000" />
+              </div>
+            </div>
+            <div class="popup-nav">
+              <button type="button" class="btn-outline-navy" onclick="popupPrev()">← Back</button>
+              <button type="button" class="btn-primary" onclick="popupNext()">Next: Emergency Contact →</button>
+            </div>
+          </div>
+
+          <!-- STEP 3: Emergency -->
+          <div class="popup-form-page" data-step="3">
+            <p class="popup-step-title"><i class="ti ti-alert-circle" aria-hidden="true"></i> Emergency Contact</p>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label" for="p_emg_name">Contact Full Name <span class="required">*</span></label>
+                <input type="text" id="p_emg_name" class="form-input" required placeholder="Full name" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="p_emg_phone">Contact Phone <span class="required">*</span></label>
+                <input type="tel" id="p_emg_phone" class="form-input" required placeholder="(000) 000-0000" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="p_emg_rel">Relationship to Student <span class="required">*</span></label>
+              <select id="p_emg_rel" class="form-select" required>
+                <option value="">Please select</option>
+                <option value="Father">Father</option>
+                <option value="Mother">Mother</option>
+                <option value="Grandparent">Grandparent</option>
+                <option value="Uncle">Uncle</option>
+                <option value="Aunt">Aunt</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="popup-nav">
+              <button type="button" class="btn-outline-navy" onclick="popupPrev()">← Back</button>
+              <button type="button" class="btn-primary" onclick="popupNext()">Next: Additional Info →</button>
+            </div>
+          </div>
+
+          <!-- STEP 4: Additional -->
+          <div class="popup-form-page" data-step="4">
+            <p class="popup-step-title"><i class="ti ti-info-circle" aria-hidden="true"></i> Additional Information</p>
+            <div class="form-group">
+              <label class="form-label" for="p_heard">How did you hear about us?</label>
+              <select id="p_heard" class="form-select">
+                <option value="">Please select</option>
+                <option value="Google">Google</option>
+                <option value="Facebook">Facebook</option>
+                <option value="Friend or Family">Friend or Family</option>
+                <option value="Masjid">Masjid</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="p_prev_school">Previous School or Preschool Attended</label>
+              <input type="text" id="p_prev_school" class="form-input" placeholder="Name of school (if applicable)" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="p_special">Any Special Needs or Accommodations?</label>
+              <textarea id="p_special" class="form-textarea" placeholder="Please describe any special needs..."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="p_comments">Additional Comments</label>
+              <textarea id="p_comments" class="form-textarea" placeholder="Anything else you'd like to share..."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-checkbox">
+                <input type="checkbox" id="p_agree" required />
+                I confirm that I am enrolling my child at Falah Academy for Academic Year 2026–2027 and agree to the terms. We will not send any marketing emails.
+              </label>
+            </div>
+            <div class="popup-nav">
+              <button type="button" class="btn-outline-navy" onclick="popupPrev()">← Back</button>
+              <button type="submit" class="btn-primary" id="popup-submit-btn" onclick="submitPopupForm(event)">Submit Enrollment →</button>
+            </div>
+          </div>
+
+        </form>
+
+        <!-- Success -->
+        <div class="popup-success" id="popup-success">
+          <div class="popup-success-icon">🎉</div>
+          <h3 style="font-family:'Playfair Display',serif;color:#1a2f5e;font-size:1.5rem;margin-bottom:0.5rem;">JazakAllah Khair!</h3>
+          <p style="color:#5a6480;margin-bottom:1.5rem;">Your enrollment has been submitted successfully. Our team will review your application and reach out within 3–5 business days.</p>
+          <p style="color:#5a6480;font-size:0.85rem;">Questions? Contact us at <strong>falahacademywa@gmail.com</strong> or <strong>(301) 919-0106</strong></p>
+          <button onclick="closeEnrollmentPopup()" class="btn-primary" style="margin-top:1.5rem;">Close</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let popupStep = 1;
+
+    function openEnrollmentPopup() {
+      document.getElementById('enrollment-popup').classList.add('open');
+      document.body.classList.add('popup-open');
+      popupStep = 1;
+      showPopupStep(1);
+    }
+
+    function closeEnrollmentPopup() {
+      document.getElementById('enrollment-popup').classList.remove('open');
+      document.body.classList.remove('popup-open');
+    }
+
+    // Close on overlay click
+    document.getElementById('enrollment-popup').addEventListener('click', function(e) {
+      if (e.target === this) closeEnrollmentPopup();
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeEnrollmentPopup();
+    });
+
+    function showPopupStep(step) {
+      document.querySelectorAll('.popup-form-page').forEach((p, i) => {
+        p.classList.toggle('active', i + 1 === step);
+      });
+      for (let i = 1; i <= 4; i++) {
+        const circle = document.getElementById('pstep-' + i);
+        const label = document.getElementById('plabel-' + i);
+        circle.classList.remove('active', 'done');
+        label.classList.remove('active');
+        if (i < step) { circle.classList.add('done'); }
+        else if (i === step) { circle.classList.add('active'); label.classList.add('active'); }
+        if (i <= 3) {
+          document.getElementById('pconn-' + i).classList.toggle('done', i < step);
+        }
+      }
+      popupStep = step;
+      // Scroll to top of modal
+      document.querySelector('.popup-modal').scrollTop = 0;
+    }
+
+    function popupNext() {
+      if (!validatePopupStep(popupStep)) return;
+      if (popupStep < 4) showPopupStep(popupStep + 1);
+    }
+
+    function popupPrev() {
+      if (popupStep > 1) showPopupStep(popupStep - 1);
+    }
+
+    function validatePopupStep(step) {
+      const page = document.querySelector(`.popup-form-page[data-step="${step}"]`);
+      if (!page) return true;
+      let valid = true;
+      page.querySelectorAll('[required]').forEach(field => {
+        field.style.borderColor = '';
+        if (field.type === 'radio') return;
+        if (!field.value.trim()) { field.style.borderColor = '#c62828'; valid = false; }
+      });
+      // Check radio groups
+      const genderChecked = page.querySelector('input[name="p_gender"]:checked');
+      if (step === 1 && !genderChecked) {
+        valid = false;
+        alert('Please select a gender.');
+      }
+      if (!valid && step !== 1) alert('Please fill in all required fields.');
+      return valid;
+    }
+
+    function submitPopupForm(e) {
+      e.preventDefault();
+      if (!validatePopupStep(4)) return;
+      const btn = document.getElementById('popup-submit-btn');
+      btn.disabled = true; btn.textContent = 'Submitting...';
+
+      const params = {
+        student_first_name: document.getElementById('p_student_first')?.value || '',
+        student_middle_name: document.getElementById('p_student_middle')?.value || '',
+        student_last_name: document.getElementById('p_student_last')?.value || '',
+        gender: document.querySelector('input[name="p_gender"]:checked')?.value || '',
+        date_of_birth: document.getElementById('p_dob')?.value || '',
+        address: document.getElementById('p_address')?.value || '',
+        grade: document.getElementById('p_grade')?.value || '',
+        father_first_name: document.getElementById('p_father_first')?.value || '',
+        father_middle_name: document.getElementById('p_father_middle')?.value || '',
+        father_last_name: document.getElementById('p_father_last')?.value || '',
+        father_email: document.getElementById('p_father_email')?.value || '',
+        father_phone: document.getElementById('p_father_phone')?.value || '',
+        mother_first_name: document.getElementById('p_mother_first')?.value || '',
+        mother_last_name: document.getElementById('p_mother_last')?.value || '',
+        mother_phone: document.getElementById('p_mother_phone')?.value || '',
+        emergency_name: document.getElementById('p_emg_name')?.value || '',
+        emergency_phone: document.getElementById('p_emg_phone')?.value || '',
+        emergency_relationship: document.getElementById('p_emg_rel')?.value || '',
+        heard_about: document.getElementById('p_heard')?.value || '',
+        previous_school: document.getElementById('p_prev_school')?.value || '',
+        special_needs: document.getElementById('p_special')?.value || '',
+        comments: document.getElementById('p_comments')?.value || ''
+      };
+
+      emailjs.send('service_1g7cfrl', 'template_tiqzn2e', params)
+        .then(() => {
+          document.getElementById('popup-enrollment-form').style.display = 'none';
+          document.getElementById('popup-success').classList.add('show');
+        })
+        .catch(() => {
+          btn.disabled = false; btn.textContent = 'Submit Enrollment →';
+          alert('Something went wrong. Please email us at falahacademywa@gmail.com');
+        });
+    }
+  </script>
+
+  <script>
+    // Auto-open popup if navigated with #enroll hash
+    window.addEventListener('load', function() {
+      if (window.location.hash === '#enroll') {
+        setTimeout(() => openEnrollmentPopup(), 300);
+      }
+    });
+  </script>
 </body>
 </html>
