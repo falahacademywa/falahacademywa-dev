@@ -2,6 +2,57 @@
    FALAH ACADEMY — Main JavaScript
    ============================================ */
 
+
+// ---- ROTATING QURANIC AYAAT ----
+const ayaat = [
+  {
+    arabic: "اقْرَأْ بِاسْمِ رَبِّكَ الَّذِي خَلَقَ",
+    translation: "Read in the name of your Lord who created",
+    ref: "— Surah Al-Alaq (96:1)"
+  },
+  {
+    arabic: "قُلْ هَلْ يَسْتَوِي ٱلَّذِينَ يَعْلَمُونَ وَٱلَّذِينَ لَا يَعْلَمُونَ",
+    translation: "Say, are those who know equal to those who do not know?",
+    ref: "— Surah Az-Zumar (39:9)"
+  },
+  {
+    arabic: "وَقُل رَّبِّ زِدْنِي عِلْمًا",
+    translation: "And say: My Lord, increase me in knowledge",
+    ref: "— Surah Taha (20:114)"
+  }
+];
+
+let currentAyahIndex = 0;
+
+function initAyaat() {
+  const container = document.getElementById('ayah-rotator');
+  if (!container) return;
+
+  function showAyah(index) {
+    container.style.opacity = '0';
+    container.style.transform = 'translateY(8px)';
+    setTimeout(() => {
+      const a = ayaat[index];
+      container.innerHTML = `
+        <p style="color:#e8d5a0;font-size:1.1rem;font-style:normal;line-height:1.8;margin-bottom:0.5rem;direction:rtl;">${a.arabic}</p>
+        <p style="color:#c0d4f0;font-style:italic;font-size:0.9rem;margin-bottom:0.3rem;">"${a.translation}"</p>
+        <small style="color:#6080a8;font-size:0.78rem;">${a.ref}</small>
+      `;
+      container.style.opacity = '1';
+      container.style.transform = 'translateY(0)';
+    }, 300);
+  }
+
+  // Show first ayah
+  showAyah(0);
+
+  // Rotate every 5 seconds
+  setInterval(() => {
+    currentAyahIndex = (currentAyahIndex + 1) % ayaat.length;
+    showAyah(currentAyahIndex);
+  }, 5000);
+}
+
 // ---- ANNOUNCEMENT BANNER ----
 const announcementConfig = {
   text: "Admissions Open for Academic Year 2026–2027 — Limited Seats Available!",
@@ -467,4 +518,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initCountdown();
   initCalendar();
   initEnrollmentForm();
+  initAyaat();
 });
