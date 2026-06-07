@@ -458,57 +458,56 @@
     }
 
     // ---- SMART YEAR DETECTION ----
-    // School year end dates
-    const year2526End = new Date('2026-06-17'); // Last day 2025-2026
-    const year2627End = new Date('2027-06-24'); // Last day 2026-2027
+    // 2025-2026 ends June 17, 2026 (after this date switch to 2026-2027)
+    const year2526LastDay = new Date('2026-06-18'); // Day AFTER last day
 
     function getCurrentAcademicYear() {
       const today = new Date();
-      if (today > year2526End) {
-        return '2026-2027';
-      }
-      return '2025-2026';
+      // If today is before June 18 2026, we are still in 2025-2026
+      return today < year2526LastDay ? '2025-2026' : '2026-2027';
     }
 
-    function updateSubscribeButtons(activeYear) {
-      const sync2526 = document.getElementById('sync-2025-2026');
-      const sync2627 = document.getElementById('sync-2026-2027');
-      const subscribeBtn2526 = sync2526?.querySelector('a[href="falah-academy-2025-2026.ics"]:not([download])');
-      const subscribeBtn2627 = sync2627?.querySelector('a[href="falah-academy-2026-2027.ics"]:not([download])');
+    function applyYearSettings() {
+      const currentYear = getCurrentAcademicYear();
+      const otherYear   = currentYear === '2025-2026' ? '2026-2027' : '2025-2026';
 
-      // Show subscribe only on active/current year
-      if (subscribeBtn2526) subscribeBtn2526.style.display = activeYear === '2025-2026' ? 'inline-flex' : 'none';
-      if (subscribeBtn2627) subscribeBtn2627.style.display = activeYear === '2026-2027' ? 'inline-flex' : 'none';
+      // 1. Set active calendar tab
+      document.querySelectorAll('.year-tab').forEach(t => t.classList.remove('active'));
+      const activeTab = document.getElementById('tab-' + currentYear);
+      if (activeTab) activeTab.classList.add('active');
 
-      // Highlight current year sync section
-      if (sync2526) sync2526.style.opacity = activeYear === '2025-2026' ? '1' : '0.6';
-      if (sync2627) sync2627.style.opacity = activeYear === '2026-2027' ? '1' : '0.6';
+      // 2. Show correct calendar grid
+      document.querySelectorAll('.year-content').forEach(c => c.classList.remove('active'));
+      const activeContent = document.getElementById('year-' + currentYear);
+      if (activeContent) activeContent.classList.add('active');
+
+      // 3. Show ALL sync buttons only for current year, hide for other year
+      const syncCurrent = document.getElementById('sync-' + currentYear);
+      const syncOther   = document.getElementById('sync-' + otherYear);
+
+      if (syncCurrent) {
+        syncCurrent.style.display = 'block';
+        syncCurrent.style.opacity = '1';
+      }
+      if (syncOther) {
+        syncOther.style.display = 'none';
+      }
+
+      // 4. Add "Current" gold badge to active tab
+      if (activeTab && !activeTab.querySelector('.current-badge')) {
+        const badge = document.createElement('span');
+        badge.className = 'current-badge';
+        badge.style.cssText = 'background:#c9a84c;color:#1a2f5e;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;margin-left:6px;';
+        badge.textContent = 'Current';
+        activeTab.appendChild(badge);
+      }
     }
 
     // Render both years on load
     document.addEventListener('DOMContentLoaded', () => {
       renderAllMonths('2025-2026', 'months-2025-2026');
       renderAllMonths('2026-2027', 'months-2026-2027');
-
-      // Auto-detect and load current academic year
-      const currentYear = getCurrentAcademicYear();
-      
-      // Set active tab
-      document.querySelectorAll('.year-tab').forEach(t => t.classList.remove('active'));
-      document.getElementById('tab-' + currentYear).classList.add('active');
-      
-      // Set active content
-      document.querySelectorAll('.year-content').forEach(c => c.classList.remove('active'));
-      document.getElementById('year-' + currentYear).classList.add('active');
-
-      // Show subscribe button only for current year
-      updateSubscribeButtons(currentYear);
-
-      // Add current year badge to tab
-      const currentTab = document.getElementById('tab-' + currentYear);
-      if (currentTab) {
-        currentTab.innerHTML += ' <span style="background:#c9a84c;color:#1a2f5e;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;margin-left:4px;">Current</span>';
-      }
+      applyYearSettings();
     });
   </script>
 </body>
