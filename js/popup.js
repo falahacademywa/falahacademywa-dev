@@ -263,15 +263,17 @@ function submitPopupForm(e) {
 
   emailjs.init('gYiHBKLQSOxt1Sfal');
   emailjs.send('service_1g7cfrl', 'template_tiqzn2e', params)
-    .then(function() {
+    .then(function(response) {
+      console.log('EmailJS SUCCESS:', response.status, response.text);
       var formEl = document.getElementById('popup-admission-form');
       var successEl = document.getElementById('popup-success');
       if (formEl) formEl.style.display = 'none';
       if (successEl) successEl.classList.add('show');
     })
     .catch(function(error) {
-      console.error('EmailJS error:', error);
+      console.error('EmailJS FULL ERROR:', JSON.stringify(error));
       if (btn) { btn.disabled = false; btn.textContent = 'Submit Admission'; }
-      alert('Something went wrong. Please try again or email us at falahacademywa@gmail.com');
+      var errorMsg = error && error.text ? error.text : (error && error.status ? 'Status: ' + error.status : 'Unknown error');
+      alert('EmailJS Error: ' + errorMsg + '\n\nPlease email us directly at falahacademywa@gmail.com');
     });
 }
