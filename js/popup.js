@@ -21,6 +21,19 @@ function closeAdmissionPopup() {
     popup.classList.remove('open');
     document.body.classList.remove('popup-open');
     clearAllErrors();
+
+    // Reset form for next use
+    var formEl = document.getElementById('popup-admission-form');
+    var successEl = document.getElementById('popup-success');
+    if (formEl) {
+      formEl.style.display = 'block';
+      formEl.reset();
+    }
+    if (successEl) successEl.classList.remove('show');
+
+    // Reset to step 1
+    popupStep = 1;
+    showPopupStep(1);
   }
 }
 
