@@ -309,6 +309,12 @@ function submitPopupForm(e) {
       var errorMsg = error && error.text ? error.text : (error && error.status ? 'Status: ' + error.status : 'Unknown error');
       alert('EmailJS Error: ' + errorMsg + '\n\nPlease email us directly at falahacademywa@gmail.com');
     });
+
+  }).catch(function(uploadError) {
+    console.error('Upload error:', uploadError);
+    if (btn) { btn.disabled = false; btn.textContent = 'Submit Admission'; }
+    alert('File upload failed. Please check your internet connection and try again.');
+  });
 }
 
 // ============================================================
