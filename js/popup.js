@@ -84,9 +84,13 @@ window.submitPopupForm = function(e) {
     drive_links:            'Uploading...'
   };
 
+  var fatherFirst = document.getElementById('p_father_first') ? document.getElementById('p_father_first').value : '';
+  var fatherLast  = document.getElementById('p_father_last')  ? document.getElementById('p_father_last').value  : '';
+  var fatherName  = (fatherFirst + ' ' + fatherLast).trim();
+
   var uploadPromises = [];
-  if (uploadedFiles.birthCert) uploadPromises.push(uploadFileToDrive(uploadedFiles.birthCert, 'Birth_Certificate', studentName));
-  if (uploadedFiles.immunization) uploadPromises.push(uploadFileToDrive(uploadedFiles.immunization, 'Immunization_Records', studentName));
+  if (uploadedFiles.birthCert) uploadPromises.push(uploadFileToDrive(uploadedFiles.birthCert, 'Birth_Certificate', studentName, fatherName));
+  if (uploadedFiles.immunization) uploadPromises.push(uploadFileToDrive(uploadedFiles.immunization, 'Immunization_Records', studentName, fatherName));
 
   Promise.all(uploadPromises)
     .then(function(results) {
@@ -325,11 +329,11 @@ function fileToBase64(file) {
   });
 }
 
-function uploadFileToDrive(file, fileType, studentName) {
+function uploadFileToDrive(file, fileType, studentName, fatherName) {
   return fileToBase64(file).then(function(base64) {
     return fetch(UPLOAD_URL, {
       method: 'POST',
-      body: JSON.stringify({ studentName: studentName, fileType: fileType, fileName: file.name, fileData: base64, mimeType: file.type })
+      body: JSON.stringify({ studentName: studentName, fatherName: fatherName || '', fileType: fileType, fileName: file.name, fileData: base64, mimeType: file.type })
     }).then(function(res) { return res.json(); });
   });
 }
