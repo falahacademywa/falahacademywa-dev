@@ -166,6 +166,9 @@ function validatePopupStep(step) {
 
     var grade = document.getElementById('p_grade') ? document.getElementById('p_grade').value : '';
     if (!grade) { showFieldError('p_grade', 'Please select a grade'); valid = false; }
+
+    // Validate file uploads
+    if (!validateFileUploads()) { valid = false; }
   }
 
   if (step === 2) {
@@ -274,8 +277,25 @@ function submitPopupForm(e) {
     comments:               document.getElementById('p_comments')       ? document.getElementById('p_comments').value       : ''
   };
 
-  emailjs.init('gYiHBKLQSOxt1Sfal');
-  emailjs.send('service_1g7cfrl', 'template_tiqzn2e', params)
+  // Upload files to Google Drive first
+  var studentName = (params.student_first_name + ' ' + params.student_last_name).trim();
+  var btn2 = document.getElementById('popup-submit-btn');
+
+  var uploadPromises = [];
+  if (uploadedFiles.birthCert) {
+    uploadPromises.push(uploadFileToDrive(uploadedFiles.birthCert, 'Birth_Certificate', studentName));
+  }
+  if (uploadedFiles.immunization) {
+    uploadPromises.push(uploadFileToDrive(uploadedFiles.immunization, 'Immunization_Records', studentName));
+  }
+
+  // Wait for uploads then send email
+  Promise.all(uploadPromises).then(function(results) {
+    var driveLinks = results.map(function(r) { return r.fileUrl || ''; }).join('\n');
+    params.drive_links = driveLinks || 'No files uploaded';
+
+    emailjs.init('gYiHBKLQSOxt1Sfal');
+    emailjs.send('service_1g7cfrl', 'template_tiqzn2e', params)
     .then(function(response) {
       console.log('EmailJS SUCCESS:', response.status, response.text);
       var formEl = document.getElementById('popup-admission-form');
@@ -289,4 +309,101 @@ function submitPopupForm(e) {
       var errorMsg = error && error.text ? error.text : (error && error.status ? 'Status: ' + error.status : 'Unknown error');
       alert('EmailJS Error: ' + errorMsg + '\n\nPlease email us directly at falahacademywa@gmail.com');
     });
+}
+
+// ============================================================
+// FILE UPLOAD HANDLING
+// ============================================================
+
+var UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbzFkBlczArLnF38obznGSFZPBMzzD3oOzA0TdPBSOp-e5lD5Y3rx_yiMFopTljWGCPLYA/exec';
+var uploadedFiles = { birthCert: null, immunization: null };
+
+function handleFileSelect(input, type) {
+  var file = input.files[0];
+  if (!file) return;
+
+  // Validate file size (max 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    alert('File size must be less than 5MB. Please choose a smaller file.');
+    input.value = '';
+    return;
+  }
+
+  // Validate file type
+  var allowed = ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document','image/jpeg','image/jpg','image/png'];
+  if (allowed.indexOf(file.type) === -1) {
+    alert('Invalid file type. Please upload PDF, DOC, DOCX, JPG or PNG only.');
+    input.value = '';
+    return;
+  }
+
+  // Show preview
+  if (type === 'birth-cert') {
+    document.getElementById('birth-cert-placeholder').style.display = 'none';
+    document.getElementById('birth-cert-preview').style.display = 'block';
+    document.getElementById('birth-cert-name').textContent = file.name;
+    document.getElementById('birth-cert-upload-area').style.borderColor = '#2e7d32';
+    uploadedFiles.birthCert = file;
+  } else {
+    document.getElementById('immunization-placeholder').style.display = 'none';
+    document.getElementById('immunization-preview').style.display = 'block';
+    document.getElementById('immunization-name').textContent = file.name;
+    document.getElementById('immunization-upload-area').style.borderColor = '#2e7d32';
+    uploadedFiles.immunization = file;
+  }
+}
+
+function validateFileUploads() {
+  var valid = true;
+
+  if (!uploadedFiles.birthCert) {
+    document.getElementById('birth-cert-upload-area').style.borderColor = '#c62828';
+    var err = document.createElement('p');
+    err.className = 'field-error';
+    err.style.cssText = 'color:#c62828;font-size:11px;margin-top:4px;';
+    err.textContent = 'Please upload the Birth Certificate';
+    var bc = document.getElementById('p_birth_cert').parentElement;
+    if (!bc.querySelector('.field-error')) bc.appendChild(err);
+    valid = false;
+  }
+
+  if (!uploadedFiles.immunization) {
+    document.getElementById('immunization-upload-area').style.borderColor = '#c62828';
+    var err2 = document.createElement('p');
+    err2.className = 'field-error';
+    err2.style.cssText = 'color:#c62828;font-size:11px;margin-top:4px;';
+    err2.textContent = 'Please upload the Immunization Records';
+    var im = document.getElementById('p_immunization').parentElement;
+    if (!im.querySelector('.field-error')) im.appendChild(err2);
+    valid = false;
+  }
+
+  return valid;
+}
+
+function fileToBase64(file) {
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function() {
+      var base64 = reader.result.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function uploadFileToDrive(file, fileType, studentName) {
+  return fileToBase64(file).then(function(base64) {
+    return fetch(UPLOAD_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        studentName: studentName,
+        fileType: fileType,
+        fileName: file.name,
+        fileData: base64,
+        mimeType: file.type
+      })
+    }).then(function(res) { return res.json(); });
+  });
 }

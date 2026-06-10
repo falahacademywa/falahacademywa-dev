@@ -374,6 +374,55 @@
                 <option value="Grade 1 (Age 6)">Grade 1 (Age 6)</option>
               </select>
             </div>
+
+            <!-- DOCUMENT UPLOADS -->
+            <div style="background:#f0f2f5;border-radius:10px;padding:1.2rem;margin-bottom:0.5rem;">
+              <p style="font-family:'Playfair Display',serif;color:var(--navy);font-size:1rem;margin-bottom:0.3rem;">
+                <i class="ti ti-paperclip" aria-hidden="true"></i> Required Documents
+              </p>
+              <p style="color:var(--text-muted);font-size:0.8rem;margin-bottom:1rem;">Please upload the following documents. Accepted formats: PDF, DOC, DOCX, JPG, PNG</p>
+
+              <!-- Birth Certificate -->
+              <div class="form-group">
+                <label class="form-label" for="p_birth_cert">
+                  Birth Certificate <span class="required">*</span>
+                </label>
+                <div id="birth-cert-upload-area" style="border:2px dashed var(--border);border-radius:8px;padding:1rem;text-align:center;cursor:pointer;transition:all 0.2s;background:white;" onclick="document.getElementById('p_birth_cert').click()">
+                  <div id="birth-cert-placeholder">
+                    <i class="ti ti-upload" style="font-size:1.5rem;color:var(--royal);" aria-hidden="true"></i>
+                    <p style="color:var(--text-muted);font-size:0.82rem;margin-top:0.4rem;">Click to upload Birth Certificate</p>
+                    <p style="color:#a0a8b8;font-size:0.72rem;">PDF, DOC, JPG, PNG (max 5MB)</p>
+                  </div>
+                  <div id="birth-cert-preview" style="display:none;">
+                    <i class="ti ti-file-check" style="font-size:1.5rem;color:#2e7d32;" aria-hidden="true"></i>
+                    <p id="birth-cert-name" style="color:#2e7d32;font-size:0.82rem;margin-top:0.4rem;font-weight:500;"></p>
+                    <p style="color:var(--text-muted);font-size:0.72rem;">Click to change file</p>
+                  </div>
+                </div>
+                <input type="file" id="p_birth_cert" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style="display:none;" onchange="handleFileSelect(this, 'birth-cert')" />
+              </div>
+
+              <!-- Immunization Records -->
+              <div class="form-group" style="margin-top:0.8rem;">
+                <label class="form-label" for="p_immunization">
+                  Immunization Records <span class="required">*</span>
+                </label>
+                <div id="immunization-upload-area" style="border:2px dashed var(--border);border-radius:8px;padding:1rem;text-align:center;cursor:pointer;transition:all 0.2s;background:white;" onclick="document.getElementById('p_immunization').click()">
+                  <div id="immunization-placeholder">
+                    <i class="ti ti-upload" style="font-size:1.5rem;color:var(--royal);" aria-hidden="true"></i>
+                    <p style="color:var(--text-muted);font-size:0.82rem;margin-top:0.4rem;">Click to upload Immunization Records</p>
+                    <p style="color:#a0a8b8;font-size:0.72rem;">PDF, DOC, JPG, PNG (max 5MB)</p>
+                  </div>
+                  <div id="immunization-preview" style="display:none;">
+                    <i class="ti ti-file-check" style="font-size:1.5rem;color:#2e7d32;" aria-hidden="true"></i>
+                    <p id="immunization-name" style="color:#2e7d32;font-size:0.82rem;margin-top:0.4rem;font-weight:500;"></p>
+                    <p style="color:var(--text-muted);font-size:0.72rem;">Click to change file</p>
+                  </div>
+                </div>
+                <input type="file" id="p_immunization" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style="display:none;" onchange="handleFileSelect(this, 'immunization')" />
+              </div>
+            </div>
+
             <div class="popup-nav">
               <span></span>
               <button type="button" class="btn-primary" onclick="popupNext()">Next: Parent Info →</button>
