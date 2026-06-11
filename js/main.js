@@ -97,26 +97,11 @@ function initNavbar() {
       hamburger.classList.toggle('open');
     });
 
-    // Handle Admissions dropdown toggle on mobile only
-    const dropdownToggle = navLinks.querySelector('.nav-dropdown-toggle');
-    if (dropdownToggle) {
-      dropdownToggle.addEventListener('click', (e) => {
-        if (window.innerWidth <= 768) {
-          e.preventDefault();
-          e.stopPropagation();
-          dropdownToggle.closest('.nav-dropdown').classList.toggle('open');
-        }
-      });
-    }
-
-    // Close menu when clicking non-dropdown links
-    navLinks.querySelectorAll('a:not(.nav-dropdown-toggle), .nav-dropdown-item').forEach(link => {
+    // Close menu when any link is clicked
+    navLinks.querySelectorAll('a').forEach(link => {
       link.addEventListener('click', () => {
         navLinks.classList.remove('open');
         hamburger.classList.remove('open');
-        // Also close dropdown
-        const dd = navLinks.querySelector('.nav-dropdown');
-        if (dd) dd.classList.remove('open');
       });
     });
   }

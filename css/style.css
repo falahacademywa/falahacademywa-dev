@@ -693,21 +693,11 @@ html, body {
 /* Mobile dropdown */
 @media (max-width: 768px) {
   .nav-dropdown-menu {
-    position: static; opacity: 0; visibility: hidden; max-height: 0;
-    overflow: hidden; transform: none; box-shadow: none;
+    position: static; opacity: 1; visibility: visible;
+    transform: none; box-shadow: none;
     border: none; background: rgba(255,255,255,0.05);
-    border-radius: 0; transition: max-height 0.3s ease, opacity 0.3s ease;
-    pointer-events: none;
+    border-radius: 0; max-height: none; overflow: visible;
   }
-  .nav-dropdown.open .nav-dropdown-menu {
-    opacity: 1; visibility: visible; max-height: 200px;
-    pointer-events: auto;
-  }
-  .nav-dropdown:hover .nav-dropdown-menu {
-    opacity: 0; visibility: hidden; max-height: 0;
-  }
-  .nav-dropdown-toggle::after { content: " ▾"; }
-  .nav-dropdown.open .nav-dropdown-toggle::after { content: " ▴"; }
   .nav-dropdown-item { color: #a0b4d8; padding: 8px 24px; font-size: 0.95rem; display: block; }
   .nav-dropdown-item:hover { color: white; background: rgba(255,255,255,0.08); }
 }
