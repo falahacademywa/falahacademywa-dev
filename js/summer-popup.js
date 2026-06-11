@@ -69,7 +69,7 @@ window.submitSummerForm = function(e) {
     emergency_relationship: document.getElementById('s_emg_rel')        ? document.getElementById('s_emg_rel').value        : '',
     heard_about:            document.getElementById('s_heard')          ? document.getElementById('s_heard').value          : '',
     comments:               document.getElementById('s_comments')       ? document.getElementById('s_comments').value       : '',
-    program:                'Summer Program 2026 (Jun 29 – Aug 6)'
+    program:                'Summer Program 2026 (Jul 6 – Aug 6)'
   };
 
   emailjs.init('gYiHBKLQSOxt1Sfal');
