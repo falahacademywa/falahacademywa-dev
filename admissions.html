@@ -572,6 +572,15 @@
       if (window.location.hash === '#enroll') {
         setTimeout(() => openAdmissionPopup(), 300);
       }
+      // Also listen for hash changes when already on the page
+      window.addEventListener('hashchange', function() {
+        if (window.location.hash === '#enroll') {
+          openAdmissionPopup();
+        }
+        if (window.location.hash === '#summer-enroll') {
+          openSummerPopup();
+        }
+      });
     });
   </script>
 
