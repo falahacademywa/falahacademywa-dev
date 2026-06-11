@@ -3,7 +3,7 @@
 // ============================================================
 
 var summerStep = 1;
-var SUMMER_TEMPLATE = 'template_summer01';
+var SUMMER_TEMPLATE = 'template_tiqzn2e'; // Reusing admission template
 
 // ---- OPEN / CLOSE ----
 window.openSummerPopup = function() {
