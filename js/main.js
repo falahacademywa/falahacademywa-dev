@@ -96,7 +96,19 @@ function initNavbar() {
       navLinks.classList.toggle('open');
       hamburger.classList.toggle('open');
     });
-    navLinks.querySelectorAll('a').forEach(link => {
+
+    // Handle Admissions dropdown toggle on mobile
+    const dropdownToggle = navLinks.querySelector('.nav-dropdown-toggle');
+    if (dropdownToggle) {
+      dropdownToggle.addEventListener('click', (e) => {
+        if (window.innerWidth <= 768) {
+          e.preventDefault();
+          dropdownToggle.closest('.nav-dropdown').classList.toggle('open');
+        }
+      });
+    }
+
+    navLinks.querySelectorAll('a:not(.nav-dropdown-toggle)').forEach(link => {
       link.addEventListener('click', () => {
         navLinks.classList.remove('open');
         hamburger.classList.remove('open');

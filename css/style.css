@@ -693,10 +693,13 @@ html, body {
 /* Mobile dropdown */
 @media (max-width: 768px) {
   .nav-dropdown-menu {
-    position: static; opacity: 1; visibility: visible;
-    transform: none; box-shadow: none;
+    position: static; opacity: 0; visibility: hidden; max-height: 0;
+    overflow: hidden; transform: none; box-shadow: none;
     border: none; background: rgba(255,255,255,0.05);
-    border-radius: 0;
+    border-radius: 0; transition: all 0.3s ease;
+  }
+  .nav-dropdown.open .nav-dropdown-menu {
+    opacity: 1; visibility: visible; max-height: 200px;
   }
   .nav-dropdown-item { color: #a0b4d8; padding: 8px 24px; font-size: 0.95rem; }
   .nav-dropdown-item:hover { color: white; background: rgba(255,255,255,0.08); }
