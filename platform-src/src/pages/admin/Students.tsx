@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase, configMissing } from "../../lib/supabase";
 
 interface StudentRow {
@@ -11,6 +12,7 @@ interface StudentRow {
 }
 
 export default function Students() {
+  const nav = useNavigate();
   const [rows, setRows] = useState<StudentRow[]>([]);
   const [search, setSearch] = useState("");
   const [showArchived, setShowArchived] = useState(false);
@@ -76,7 +78,8 @@ export default function Students() {
               {filtered.map((r) => {
                 const e = current(r);
                 return (
-                  <tr key={r.id} className="border-b last:border-0 hover:bg-silver/60">
+                  <tr key={r.id} onClick={() => nav(`/admin/students/${r.id}`)}
+                    className="cursor-pointer border-b last:border-0 hover:bg-silver/60">
                     <td className="px-4 py-3 font-mono">{String(r.student_no).padStart(5, "0")}</td>
                     <td className="px-4 py-3 font-semibold text-navy">{r.first_name} {r.last_name}</td>
                     <td className="px-4 py-3">{e?.school_year ?? "—"}</td>
