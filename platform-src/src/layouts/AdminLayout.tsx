@@ -8,8 +8,10 @@ const nav = [
   { to: "/admin/parents", label: "Parents" },
   { to: "/admin/teachers", label: "Teachers" },
   { to: "/admin/fees", label: "Fees" },
+  { to: "/admin/academics", label: "Academics & Qur'an" },
   { to: "/admin/calendar", label: "Calendar" },
   { to: "/admin/announcements", label: "Announcements" },
+  { to: "/admin/reports", label: "Reports" },
   { to: "/admin/settings", label: "Settings" },
 ];
 

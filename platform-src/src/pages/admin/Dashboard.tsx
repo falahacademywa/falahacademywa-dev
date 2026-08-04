@@ -25,15 +25,28 @@ export default function Dashboard() {
         const { count: c } = await q;
         return c ?? 0;
       };
-      const [students, applicants, parents, teachers] = await Promise.all([
+      const today = new Date().toISOString().slice(0, 10);
+      const month = today.slice(0, 7);
+      const [students, applicants, parents, teachers, presentToday, absentToday, plans] = await Promise.all([
         count("students", (q) => q.eq("archived", false)),
         count("applicants", (q) => q.eq("status", "under_review")),
         count("profiles", (q) => q.eq("role", "parent")),
         count("teachers", (q) => q.eq("active", true)),
+        count("attendance", (q) => q.eq("date", today).in("status", ["present", "late"])),
+        count("attendance", (q) => q.eq("date", today).eq("status", "absent")),
+        supabase.from("fee_plans")
+          .select("id, total_amount, enrollments!inner ( status ), payments ( payment_date )")
+          .eq("status", "active").eq("enrollments.status", "active").gt("total_amount", 0)
+          .then(({ data }) => data ?? []),
       ]);
+      const outstanding = (plans as { payments: { payment_date: string }[] }[])
+        .filter((p) => !p.payments.some((x) => x.payment_date.startsWith(month))).length;
       setWidgets([
         { label: "Total Students", value: students, to: "/admin/students" },
         { label: "New Applications", value: applicants, to: "/admin/admissions" },
+        { label: "Present Today", value: presentToday, to: "/admin/reports" },
+        { label: "Absent Today", value: absentToday, to: "/admin/reports" },
+        { label: "Fees Unpaid (this month)", value: outstanding, to: "/admin/fees" },
         { label: "Parent Accounts", value: parents, to: "/admin/parents" },
         { label: "Teachers", value: teachers, to: "/admin/teachers" },
       ]);

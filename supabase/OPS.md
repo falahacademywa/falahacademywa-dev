@@ -74,7 +74,23 @@ To restore: `openssl enc -d -aes-256-cbc -pbkdf2 -pass pass:PASSPHRASE -in backu
 6. Triggers → Add trigger → `syncAttendance` → From spreadsheet → On change.
    Optionally add a time-driven hourly trigger as a safety net.
 
-## 4. Dev vs production
+## 4. Daily notifications + email (Phase 4)
+
+Workflow: `.github/workflows/platform-notifications.yml` (daily ~8:30am Pacific).
+It runs the fee-reminder rule and emails parents any unread portal notifications.
+Setup:
+
+1. Repo secret `PLATFORM_SUPABASE_SERVICE_KEY` = the **secret** key
+   (Dashboard → API Keys). GitHub secrets are encrypted — safe there,
+   never in code.
+2. Free Brevo account (brevo.com, 300 emails/day) with the school email →
+   SMTP & API → generate an API key → repo secret `BREVO_API_KEY`.
+3. Optional deliverability: in Brevo, add falahacademywa.org as a verified
+   sender domain (they give you DNS records to add in Cloudflare) so emails
+   send from the school domain rather than Gmail.
+Emails to `*.test.local` addresses are skipped automatically.
+
+## 5. Dev vs production
 
 - Dev: project `falah-platform-dev` — test accounts, fake data. Dev repo's
   `platform-src/src/lib/supabase.ts` points here.
