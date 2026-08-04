@@ -10,6 +10,8 @@ import Parents from "./pages/admin/Parents";
 import Teachers from "./pages/admin/Teachers";
 import StudentProfile from "./pages/admin/StudentProfile";
 import Settings from "./pages/admin/Settings";
+import CalendarAdmin from "./pages/admin/CalendarAdmin";
+import AnnouncementsAdmin from "./pages/admin/AnnouncementsAdmin";
 import ParentHome from "./pages/parent/ParentHome";
 
 // HashRouter so deep links work on GitHub Pages without server rewrites.
@@ -27,8 +29,8 @@ export default function App() {
             <Route path="parents" element={<Parents />} />
             <Route path="teachers" element={<Teachers />} />
             <Route path="fees" element={<Placeholder title="Fees" phase="Phase 3" />} />
-            <Route path="calendar" element={<Placeholder title="Calendar" phase="Phase 2" />} />
-            <Route path="announcements" element={<Placeholder title="Announcements" phase="Phase 2" />} />
+            <Route path="calendar" element={<CalendarAdmin />} />
+            <Route path="announcements" element={<AnnouncementsAdmin />} />
             <Route path="settings" element={<Settings />} />
           </Route>
           <Route path="/parent" element={<RequireRole role="parent"><ParentHome /></RequireRole>} />
