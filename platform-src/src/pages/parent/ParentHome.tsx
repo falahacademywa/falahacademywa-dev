@@ -42,6 +42,7 @@ export default function ParentHome() {
   const [fee, setFee] = useState<FeePlan | null>(null);
   const [notifs, setNotifs] = useState<Notif[]>([]);
   const [bellOpen, setBellOpen] = useState(false);
+  const [calOpen, setCalOpen] = useState(false);
 
   useEffect(() => {
     if (configMissing) return;
@@ -238,25 +239,33 @@ export default function ParentHome() {
                 </div>
               ))}
             </div>
-            <div className="grid grid-cols-7 gap-1 text-center text-xs">
-              {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
-                <div key={i} className="py-1 font-bold text-gray-400">{d}</div>
-              ))}
-              {monthGrid.map((c, i) => (
-                <div key={i} className={`flex h-9 items-center justify-center rounded ${
-                  c.day == null ? "" :
-                  c.status === "present" ? "bg-green-100 font-semibold text-green-700" :
-                  c.status === "late" ? "bg-amber-100 font-semibold text-amber-800" :
-                  c.status === "absent" ? "bg-red-100 font-semibold text-red-700" :
-                  "bg-silver text-gray-400"}`}>
-                  {c.day ?? ""}
+            <button onClick={() => setCalOpen(!calOpen)}
+              className="mb-1 text-sm font-semibold text-royal hover:underline">
+              {calOpen ? "▴ Hide day-by-day calendar" : "▾ View day-by-day calendar"}
+            </button>
+            {calOpen && (
+              <>
+                <div className="mt-2 grid grid-cols-7 gap-1 text-center text-xs">
+                  {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
+                    <div key={i} className="py-1 font-bold text-gray-400">{d}</div>
+                  ))}
+                  {monthGrid.map((c, i) => (
+                    <div key={i} className={`flex h-9 items-center justify-center rounded ${
+                      c.day == null ? "" :
+                      c.status === "present" ? "bg-green-100 font-semibold text-green-700" :
+                      c.status === "late" ? "bg-amber-100 font-semibold text-amber-800" :
+                      c.status === "absent" ? "bg-red-100 font-semibold text-red-700" :
+                      "bg-silver text-gray-400"}`}>
+                      {c.day ?? ""}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            {activeEnrollment && (
-              <p className="mt-3 text-xs text-gray-400">
-                {activeEnrollment.grade_name} · {activeEnrollment.school_year}. Green = present, amber = late, red = absent.
-              </p>
+                {activeEnrollment && (
+                  <p className="mt-3 text-xs text-gray-400">
+                    {activeEnrollment.grade_name} · {activeEnrollment.school_year}. Green = present, amber = late, red = absent.
+                  </p>
+                )}
+              </>
             )}
           </section>
 
