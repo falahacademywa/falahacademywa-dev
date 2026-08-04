@@ -23,12 +23,6 @@ interface Notif { id: number; title: string; message: string; priority: string; 
 interface Ev { id: string; title: string; event_type: string; start_date: string; end_date: string | null; location: string | null; rsvp_enabled: boolean }
 interface Ann { id: string; title: string; content: string; category: string; is_pinned: boolean; requires_ack: boolean; publish_date: string | null; announcement_acks: { parent_id: string }[] }
 
-const pill: Record<string, string> = {
-  present: "bg-green-100 text-green-700",
-  late: "bg-amber-100 text-amber-800",
-  absent: "bg-red-100 text-red-700",
-};
-
 export default function ParentHome() {
   const { profile, session, signOut } = useAuth();
   const [children, setChildren] = useState<Child[]>([]);
@@ -215,13 +209,16 @@ export default function ParentHome() {
           </div>
         )}
 
-        <div className="grid gap-5 lg:grid-cols-5">
-          {/* Attendance */}
-          <section className="rounded-xl bg-white p-5 shadow-sm lg:col-span-3">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="font-display text-lg font-semibold text-navy">
-                Attendance{active ? ` — ${active.students.first_name}` : ""}
-              </h2>
+        {/* Attendance — one-line summary bar; calendar expands only on demand */}
+        <section className="rounded-xl bg-white px-5 py-3.5 shadow-sm">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <h2 className="font-display text-lg font-semibold text-navy">
+              Attendance{active ? ` — ${active.students.first_name}` : ""}
+            </h2>
+            <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-sm font-semibold text-green-700">{counts.present} present</span>
+            <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-sm font-semibold text-amber-800">{counts.late} late</span>
+            <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-sm font-semibold text-red-700">{counts.absent} absent</span>
+            <div className="ml-auto flex items-center gap-3">
               <select value={month} onChange={(e) => setMonth(e.target.value)}
                 className="rounded border border-gray-300 px-2 py-1 text-sm">
                 {monthOptions.map((m) => (
@@ -230,19 +227,12 @@ export default function ParentHome() {
                   </option>
                 ))}
               </select>
+              <button onClick={() => setCalOpen(!calOpen)}
+                className="whitespace-nowrap text-sm font-semibold text-royal hover:underline">
+                {calOpen ? "▴ Hide calendar" : "▾ Calendar"}
+              </button>
             </div>
-            <div className="mb-4 grid grid-cols-3 gap-3">
-              {(["present", "late", "absent"] as const).map((s) => (
-                <div key={s} className={`rounded-lg p-3 text-center ${pill[s]}`}>
-                  <div className="font-display text-2xl font-semibold">{counts[s]}</div>
-                  <div className="text-xs font-semibold uppercase tracking-wide">{s}</div>
-                </div>
-              ))}
-            </div>
-            <button onClick={() => setCalOpen(!calOpen)}
-              className="mb-1 text-sm font-semibold text-royal hover:underline">
-              {calOpen ? "▴ Hide day-by-day calendar" : "▾ View day-by-day calendar"}
-            </button>
+          </div>
             {calOpen && (
               <>
                 <div className="mt-2 grid grid-cols-7 gap-1 text-center text-xs">
@@ -267,34 +257,7 @@ export default function ParentHome() {
                 )}
               </>
             )}
-          </section>
-
-          {/* Upcoming events */}
-          <section className="rounded-xl bg-white p-5 shadow-sm lg:col-span-2">
-            <h2 className="mb-4 font-display text-lg font-semibold text-navy">Upcoming</h2>
-            <div className="space-y-3">
-              {events.map((e) => (
-                <div key={e.id} className="flex gap-3">
-                  <div className="w-14 shrink-0 rounded-lg bg-silver py-1 text-center">
-                    <div className="text-[10px] font-bold uppercase text-gray-400">
-                      {new Date(e.start_date + "T12:00:00").toLocaleDateString("en-US", { month: "short" })}
-                    </div>
-                    <div className="font-display text-lg font-semibold text-navy">
-                      {new Date(e.start_date + "T12:00:00").getDate()}
-                    </div>
-                  </div>
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold text-gray-800">{e.title}</div>
-                    <div className="text-xs text-gray-400">
-                      {e.event_type}{e.location ? ` · ${e.location}` : ""}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {!events.length && !configMissing && <p className="text-sm text-gray-400">No upcoming events.</p>}
-            </div>
-          </section>
-        </div>
+        </section>
 
         {/* Qur'an + Fees */}
         <div className="grid gap-5 lg:grid-cols-5">
@@ -378,8 +341,9 @@ export default function ParentHome() {
           </section>
         </div>
 
+        <div className="grid gap-5 lg:grid-cols-5">
         {/* Announcements */}
-        <section className="rounded-xl bg-white p-5 shadow-sm">
+        <section className="rounded-xl bg-white p-5 shadow-sm lg:col-span-3">
           <h2 className="mb-4 font-display text-lg font-semibold text-navy">Announcements</h2>
           <div className="space-y-4">
             {anns.map((a) => {
@@ -411,6 +375,33 @@ export default function ParentHome() {
             {!anns.length && !configMissing && <p className="text-sm text-gray-400">No announcements yet.</p>}
           </div>
         </section>
+
+        {/* Upcoming events */}
+        <section className="rounded-xl bg-white p-5 shadow-sm lg:col-span-2">
+          <h2 className="mb-4 font-display text-lg font-semibold text-navy">Upcoming</h2>
+          <div className="space-y-3">
+            {events.map((e) => (
+              <div key={e.id} className="flex gap-3">
+                <div className="w-14 shrink-0 rounded-lg bg-silver py-1 text-center">
+                  <div className="text-[10px] font-bold uppercase text-gray-400">
+                    {new Date(e.start_date + "T12:00:00").toLocaleDateString("en-US", { month: "short" })}
+                  </div>
+                  <div className="font-display text-lg font-semibold text-navy">
+                    {new Date(e.start_date + "T12:00:00").getDate()}
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-semibold text-gray-800">{e.title}</div>
+                  <div className="text-xs text-gray-400">
+                    {e.event_type}{e.location ? ` · ${e.location}` : ""}
+                  </div>
+                </div>
+              </div>
+            ))}
+            {!events.length && !configMissing && <p className="text-sm text-gray-400">No upcoming events.</p>}
+          </div>
+        </section>
+        </div>
       </main>
     </div>
   );
