@@ -3,7 +3,6 @@ import { AuthProvider, RequireRole, RequireAuth } from "./lib/auth";
 import Login from "./pages/Login";
 import ChangePassword from "./pages/ChangePassword";
 import AdminLayout from "./layouts/AdminLayout";
-import TeacherLayout from "./layouts/TeacherLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import Students from "./pages/admin/Students";
 import Admissions from "./pages/admin/Admissions";
@@ -42,11 +41,6 @@ export default function App() {
             <Route path="announcements" element={<AnnouncementsAdmin />} />
             <Route path="reports" element={<Reports />} />
             <Route path="settings" element={<Settings />} />
-          </Route>
-
-          <Route path="/teacher" element={<RequireRole roles={["teacher"]}><TeacherLayout /></RequireRole>}>
-            <Route index element={<Academics />} />
-            <Route path="assignments" element={<AssignmentsAdmin />} />
           </Route>
 
           <Route path="/parent" element={<RequireRole roles={["parent"]}><ParentHome /></RequireRole>} />

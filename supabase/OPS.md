@@ -105,18 +105,12 @@ Emails to `*.test.local` addresses are skipped automatically.
 Files are made link-viewable automatically so parents can open them.
 Individual (per-student) assignments are entered in the portal instead.
 
-## 6. Teacher Workspace accounts
+## 6. Teachers (no logins — by design)
 
-Teachers log in at /platform/ like everyone else and land in the Teacher
-Workspace (Qur'an/academic entry + assignments for their grades only).
-To create one:
-1. Supabase Dashboard -> Authentication -> Add user (email + temp password).
-2. SQL Editor:
-   update public.profiles set role = 'teacher', full_name = 'Teacher Name',
-     must_change_password = true,
-     teacher_id = (select id from public.teachers where email = 'TEACHER_EMAIL')
-   where id = (select id from auth.users where email = 'LOGIN_EMAIL');
-   (Make sure the teacher record exists in Admin -> Teachers with grades assigned.)
+Teachers never log into the platform (PRD Principle 3). Their entire
+workflow: mark attendance in the Google Sheet (§3) and drop assignment
+files in the Drive folder (§5). Qur'an and academic progress entries are
+made by the Administrator in Admin -> Academics & Qur'an.
 
 ## 7. Dev vs production
 

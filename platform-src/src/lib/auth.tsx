@@ -4,14 +4,13 @@ import type { Session } from "@supabase/supabase-js";
 import { Navigate } from "react-router-dom";
 import { supabase, configMissing } from "./supabase";
 
-export type Role = "admin" | "parent" | "teacher";
+export type Role = "admin" | "parent";
 
 export interface Profile {
   id: string;
   full_name: string;
   role: Role;
   must_change_password: boolean;
-  teacher_id: string | null;
 }
 
 interface AuthState {
@@ -45,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function loadProfile(uid: string) {
     const { data } = await supabase
       .from("profiles")
-      .select("id, full_name, role, must_change_password, teacher_id")
+      .select("id, full_name, role, must_change_password")
       .eq("id", uid)
       .single();
     setProfile((data as Profile) ?? null);
@@ -80,11 +79,7 @@ export function useAuth() {
 }
 
 export function homeFor(role: Role | undefined) {
-  switch (role) {
-    case "admin": return "/admin";
-    case "teacher": return "/teacher";
-    default: return "/parent";
-  }
+  return role === "admin" ? "/admin" : "/parent";
 }
 
 export function RequireRole({ roles, children }: { roles: Role[]; children: ReactNode }) {
