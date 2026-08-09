@@ -55,15 +55,19 @@ jobs:
 
 To restore: `openssl enc -d -aes-256-cbc -pbkdf2 -pass pass:PASSPHRASE -in backup-DATE.sql.gz.enc | gunzip | psql NEW_DB_URL`
 
-## 3. Attendance sheet (teachers' Google Sheet → platform)
+## 3. Attendance sheet — "Today sheet" design (teachers' Google Sheet → platform)
 
-1. In the school's Google account create a spreadsheet "Falah Academy Attendance 2026-2027".
+The sheet only ever holds TODAY. History lives in the platform (parents see
+it on their dashboard; admin exports CSV from Reports). Column C resets
+itself overnight, so the sheet never grows.
+
+1. In the school's Google account create a spreadsheet
+   "Falah Academy Attendance".
 2. One tab per grade, named exactly: `Pre-K`, `KG`, `Grade 1`, `Grade 3`.
-3. Each tab layout (row 1 headers, then one row per student):
-   | StudentNo | Student Name | 2026-08-26 | 2026-08-27 | ... |
-   |-----------|--------------|------------|------------|-----|
-   | 10001     | Ahmed T.     | P          | L          |     |
-   Values: `P` present · `L` late · `A` absent · blank = not recorded.
+3. Each tab: fixed 4 columns —
+   | StudentNo | Student Name | Today   | Note (optional) |
+   |-----------|--------------|---------|-----------------|
+   | 10001     | Ahmed T.     | Present |                 |
    Student numbers come from the platform's Students page.
 4. Extensions → Apps Script → paste `google-apps-script/attendance-sync.gs`.
 5. Project Settings → Script properties:
@@ -71,8 +75,13 @@ To restore: `openssl enc -d -aes-256-cbc -pbkdf2 -pass pass:PASSPHRASE -in backu
    - `SUPABASE_SERVICE_KEY` = the **secret** key (Dashboard → API keys).
      The secret key is safe HERE because Apps Script runs privately inside
      the school's Google account — never put it in the website.
-6. Triggers → Add trigger → `syncAttendance` → From spreadsheet → On change.
-   Optionally add a time-driven hourly trigger as a safety net.
+6. In the Apps Script editor, run the `setupSheet` function once — it adds
+   the headers and Present/Late/Absent dropdowns automatically.
+7. Triggers → Add trigger, twice:
+   - `syncAttendance` · From spreadsheet · On change
+   - `clearToday` · Time-driven · Day timer · Midnight to 1am
+Teacher's daily job: open their tab, tap one dropdown per student. Done.
+Past-day corrections: admin edits in the platform (same-day rule preserved).
 
 ## 4. Daily notifications + email (Phase 4)
 
