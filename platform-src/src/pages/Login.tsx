@@ -1,13 +1,26 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase, configMissing } from "../lib/supabase";
+import { homeFor } from "../lib/auth";
+import type { Role } from "../lib/auth";
 
 export default function Login() {
   const nav = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  async function forgot() {
+    if (!email) return setError("Enter your email above first, then tap Forgot password.");
+    setError(null);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + "/platform/#/change-password",
+    });
+    if (error) setError(error.message);
+    else setInfo("Password reset email sent — check your inbox (and spam).");
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -25,10 +38,10 @@ export default function Login() {
     }
     const { data: p } = await supabase
       .from("profiles")
-      .select("role")
+      .select("role, must_change_password")
       .eq("id", data.user.id)
       .single();
-    nav(p?.role === "admin" ? "/admin" : "/parent", { replace: true });
+    nav(p?.must_change_password ? "/change-password" : homeFor(p?.role as Role), { replace: true });
   }
 
   return (
@@ -46,6 +59,9 @@ export default function Login() {
         )}
         {error && (
           <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</div>
+        )}
+        {info && (
+          <div className="mb-4 rounded-lg bg-green-50 p-3 text-sm text-green-800">{info}</div>
         )}
         <form onSubmit={submit} className="space-y-4">
           <div>
@@ -65,6 +81,9 @@ export default function Login() {
             {busy ? "Signing in…" : "Sign In"}
           </button>
         </form>
+        <button onClick={forgot} className="mt-3 w-full text-center text-sm text-royal hover:underline">
+          Forgot password?
+        </button>
         <p className="mt-5 text-center text-xs leading-relaxed text-gray-400">
           Accounts are created by the school and activated during Orientation.
           Forgot your password? Use the reset link in your invitation email or contact the office.

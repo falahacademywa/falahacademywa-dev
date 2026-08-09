@@ -20,6 +20,7 @@ interface QuranRow {
 interface AcadRow { id: number; assessment_date: string; subject: string; assessment_type: string; score: number | null; max_score: number | null; notes: string | null }
 interface FeePlan { id: string; total_amount: number; billing_frequency: string; payments: { payment_date: string; amount: number; payment_method: string }[] }
 interface Notif { id: number; title: string; message: string; priority: string; is_read: boolean; created_at: string }
+interface Asg { id: string; subject: string; title: string; instructions: string | null; file_url: string | null; assigned_date: string; due_date: string | null }
 interface Ev { id: string; title: string; event_type: string; start_date: string; end_date: string | null; location: string | null; rsvp_enabled: boolean }
 interface Ann { id: string; title: string; content: string; category: string; is_pinned: boolean; requires_ack: boolean; publish_date: string | null; announcement_acks: { parent_id: string }[] }
 
@@ -37,6 +38,7 @@ export default function ParentHome() {
   const [notifs, setNotifs] = useState<Notif[]>([]);
   const [bellOpen, setBellOpen] = useState(false);
   const [calOpen, setCalOpen] = useState(false);
+  const [asgs, setAsgs] = useState<Asg[]>([]);
 
   useEffect(() => {
     if (configMissing) return;
@@ -82,6 +84,17 @@ export default function ParentHome() {
       .select("id, total_amount, billing_frequency, payments ( payment_date, amount, payment_method )")
       .eq("enrollment_id", enr.id).maybeSingle()
       .then(({ data }) => setFee((data as unknown as FeePlan) ?? null));
+    // Assignments: grade-wide for this child's grade + individual ones.
+    // RLS already limits rows to this family; filter client-side per child.
+    supabase.from("assignments")
+      .select("id, subject, title, instructions, file_url, assigned_date, due_date, grade_id, enrollment_id, grades ( name )")
+      .order("assigned_date", { ascending: false }).limit(30)
+      .then(({ data }) => {
+        const rows = ((data as any[]) ?? []).filter((a) =>
+          a.enrollment_id === enr.id ||
+          (a.grade_id != null && a.grades?.name === (active.students.enrollments.find((e) => e.status === "active")?.grade_name ?? "")));
+        setAsgs(rows as Asg[]);
+      });
   }, [active]);
 
   async function markAllRead() {
@@ -258,6 +271,36 @@ export default function ParentHome() {
               </>
             )}
         </section>
+
+        {/* Assignments */}
+        {asgs.length > 0 && (
+          <section className="rounded-xl bg-white p-5 shadow-sm">
+            <h2 className="mb-3 font-display text-lg font-semibold text-navy">
+              Assignments{active ? ` — ${active.students.first_name}` : ""}
+            </h2>
+            <div className="space-y-2">
+              {asgs.map((a) => {
+                const overdue = a.due_date && a.due_date < new Date().toISOString().slice(0, 10);
+                return (
+                  <div key={a.id} className="flex flex-wrap items-center gap-2 rounded-lg bg-silver/60 px-3 py-2 text-sm">
+                    <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-navy">{a.subject}</span>
+                    <span className="font-semibold text-gray-800">{a.title}</span>
+                    {a.due_date && (
+                      <span className={`text-xs font-semibold ${overdue ? "text-red-600" : "text-gray-500"}`}>
+                        due {a.due_date}
+                      </span>
+                    )}
+                    {a.instructions && <span className="text-xs text-gray-500">{a.instructions}</span>}
+                    {a.file_url && (
+                      <a href={a.file_url} target="_blank" rel="noreferrer"
+                        className="ml-auto text-xs font-semibold text-royal hover:underline">Open ↗</a>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Qur'an + Fees */}
         <div className="grid gap-5 lg:grid-cols-5">

@@ -90,7 +90,35 @@ Setup:
    send from the school domain rather than Gmail.
 Emails to `*.test.local` addresses are skipped automatically.
 
-## 5. Dev vs production
+## 5. Assignments Drive folder (teachers upload once, portal shows it)
+
+1. In the school's Drive create a folder **Falah Assignments** with one
+   subfolder per grade, named exactly like the platform grades:
+   `Pre-K`, `KG`, `Grade 1`, `Grade 3`.
+2. Teachers drop files named: `2026-09-05 - Math - Worksheet p12.pdf`
+   (due date - subject - title). No date = no due date shown.
+3. script.google.com -> New project -> paste
+   `google-apps-script/drive-assignments-sync.gs`.
+4. Script properties: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`,
+   `ASSIGNMENTS_FOLDER_ID` (the root folder's ID from its Drive URL).
+5. Trigger: `syncAssignments`, time-driven, hourly.
+Files are made link-viewable automatically so parents can open them.
+Individual (per-student) assignments are entered in the portal instead.
+
+## 6. Teacher Workspace accounts
+
+Teachers log in at /platform/ like everyone else and land in the Teacher
+Workspace (Qur'an/academic entry + assignments for their grades only).
+To create one:
+1. Supabase Dashboard -> Authentication -> Add user (email + temp password).
+2. SQL Editor:
+   update public.profiles set role = 'teacher', full_name = 'Teacher Name',
+     must_change_password = true,
+     teacher_id = (select id from public.teachers where email = 'TEACHER_EMAIL')
+   where id = (select id from auth.users where email = 'LOGIN_EMAIL');
+   (Make sure the teacher record exists in Admin -> Teachers with grades assigned.)
+
+## 7. Dev vs production
 
 - Dev: project `falah-platform-dev` — test accounts, fake data. Dev repo's
   `platform-src/src/lib/supabase.ts` points here.

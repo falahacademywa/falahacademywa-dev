@@ -3,6 +3,45 @@
 // ============================================================
 
 var UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbzFkBlczArLnF38obznGSFZPBMzzD3oOzA0TdPBSOp-e5lD5Y3rx_yiMFopTljWGCPLYA/exec';
+
+// Operations Platform intake (BR-106): each submission also creates an
+// Applicant record automatically. Publishable key + insert-only policy;
+// failures here never block the admission submission itself.
+var PLATFORM_URL = 'https://rlaqpzeqmmlrdeqfbjyq.supabase.co';
+var PLATFORM_KEY = 'sb_publishable_pFmJCkvttv7J3JUsLGdD1g_UgXwCzyy';
+
+function createApplicantRecord(params) {
+  try {
+    return fetch(PLATFORM_URL + '/rest/v1/applicants', {
+      method: 'POST',
+      headers: { 'apikey': PLATFORM_KEY, 'Authorization': 'Bearer ' + PLATFORM_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        first_name: params.student_first_name,
+        last_name: params.student_last_name,
+        date_of_birth: params.date_of_birth || null,
+        gender: params.gender || null,
+        current_school: params.previous_school || null,
+        applied_grade_text: params.grade || null,
+        parent_name: (params.father_first_name + ' ' + params.father_last_name).trim(),
+        parent_email: params.father_email || null,
+        parent_phone: params.father_phone || null,
+        details: {
+          address: params.address,
+          mother: (params.mother_first_name + ' ' + params.mother_last_name).trim(),
+          mother_phone: params.mother_phone,
+          emergency: params.emergency_name + ' (' + params.emergency_relationship + ') ' + params.emergency_phone,
+          heard_about: params.heard_about,
+          special_needs: params.special_needs,
+          comments: params.comments,
+          documents: params.drive_links
+        }
+      })
+    }).catch(function (err) { console.warn('Platform intake skipped:', err); });
+  } catch (err) {
+    console.warn('Platform intake skipped:', err);
+    return Promise.resolve();
+  }
+}
 var popupStep = 1;
 var uploadedFiles = { birthCert: null, immunization: null };
 
@@ -102,6 +141,7 @@ window.submitPopupForm = function(e) {
       var laterBox2 = document.getElementById('p_docs_later');
       if (laterBox2 && laterBox2.checked) docNotes.push('Parent will provide the missing document(s) before the first day of school.');
       params.drive_links = docNotes.join('\n') || 'No files uploaded';
+      createApplicantRecord(params); // fire-and-forget; email remains the source of truth for the office
       emailjs.init('gYiHBKLQSOxt1Sfal');
       return emailjs.send('service_1g7cfrl', 'template_tiqzn2e', params);
     })
