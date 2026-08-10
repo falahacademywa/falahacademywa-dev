@@ -22,7 +22,7 @@ export default function AdminLayout() {
     <div className="flex min-h-screen">
       <aside className="flex w-60 shrink-0 flex-col bg-navy text-white">
         <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
-          <img src="/images/logo.jpg" alt="" className="h-9 w-9 rounded-full object-cover" />
+          <img src="../images/logo.jpg" alt="" className="h-9 w-9 rounded-full object-cover" />
           <div>
             <div className="font-display text-sm font-semibold leading-tight">Falah Academy</div>
             <div className="text-[11px] font-semibold text-emerald-300">Administration Portal</div>

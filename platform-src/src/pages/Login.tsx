@@ -48,7 +48,7 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-navy px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl">
         <div className="mb-6 text-center">
-          <img src="/images/logo.jpg" alt="Falah Academy" className="mx-auto mb-3 h-16 w-16 rounded-full object-cover" />
+          <img src="../images/logo.jpg" alt="Falah Academy" className="mx-auto mb-3 h-16 w-16 rounded-full object-cover" />
           <h1 className="font-display text-2xl font-semibold text-navy">Falah Academy</h1>
           <p className="mt-1 text-sm text-gray-500">Parent &amp; School Operations Platform</p>
         </div>
