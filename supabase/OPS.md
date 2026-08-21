@@ -72,9 +72,12 @@ itself overnight, so the sheet never grows.
 4. Extensions → Apps Script → paste `google-apps-script/attendance-sync.gs`.
 5. Project Settings → Script properties:
    - `SUPABASE_URL` = the project URL
-   - `SUPABASE_SERVICE_KEY` = the **secret** key (Dashboard → API keys).
-     The secret key is safe HERE because Apps Script runs privately inside
-     the school's Google account — never put it in the website.
+   - `SUPABASE_SERVICE_KEY` = the **LEGACY `service_role` key** (Dashboard →
+     API Keys → "Legacy anon, service_role API keys" tab → reveal). Starts
+     with `eyJ`. The newer `sb_secret_...` keys DO NOT work from Apps Script
+     (Supabase rejects them as "browser use", HTTP 401). The key is safe HERE
+     because Apps Script runs privately inside the school's Google account —
+     never put it in the website.
 6. In the Apps Script editor, run the `setupSheet` function once — it adds
    the headers and Present/Late/Absent dropdowns automatically.
 7. Triggers → Add trigger, twice:
