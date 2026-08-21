@@ -124,7 +124,28 @@ workflow: mark attendance in the Google Sheet (§3) and drop assignment
 files in the Drive folder (§5). Qur'an and academic progress entries are
 made by the Administrator in Admin -> Academics & Qur'an.
 
-## 7. Dev vs production
+## 7. Class Updates form (teacher notes + photos → parent feed)
+
+Teachers post per-subject updates ("English: practiced 3-letter words,
+homework due Thursday" + photo) via ONE Google Form. Qur'an updates may
+target one student (visible only to that family). Parents get an evening
+digest notification (immediate 🔔 only when a homework due date is set).
+
+1. script.google.com → New project → paste
+   `google-apps-script/class-updates-form.gs` → save as "Class Updates".
+2. Script properties: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` (LEGACY
+   service_role `eyJ...` key), `TEACHER_EMAILS` (comma-separated allowlist
+   of teacher Google addresses — submissions from others are ignored).
+3. Run `createForm()` once → the log prints the form's EDIT url + teacher link.
+4. MANUAL (API can't create upload questions): open the edit URL → add a
+   "File upload" question titled "Photo / file (optional)", 1-3 files, 10MB.
+5. Share the teacher link. Teachers must be signed into any Google account
+   (their personal Gmail is fine — required by Google for file uploads).
+   Optional: give each teacher a pre-filled link with their grade selected
+   (form editor → ⋮ → "Get pre-filled link").
+6. Roster changed? Run `refreshRoster()` to rebuild the student dropdown.
+
+## 8. Dev vs production
 
 - Dev: project `falah-platform-dev` — test accounts, fake data. Dev repo's
   `platform-src/src/lib/supabase.ts` points here.

@@ -10,7 +10,8 @@ name: Platform daily notifications
 
 on:
   schedule:
-    - cron: "30 16 * * *" # daily ~8:30-9:30am Pacific
+    - cron: "30 16 * * *" # daily ~8:30-9:30am Pacific (fee rules + email dispatch)
+    - cron: "30 1 * * *"  # daily ~5:30-6:30pm Pacific (class-updates evening digest)
   workflow_dispatch: {}
 
 jobs:

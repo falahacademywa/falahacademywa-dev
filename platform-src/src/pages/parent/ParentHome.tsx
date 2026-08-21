@@ -21,6 +21,11 @@ interface AcadRow { id: number; assessment_date: string; subject: string; assess
 interface FeePlan { id: string; total_amount: number; billing_frequency: string; payments: { payment_date: string; amount: number; payment_method: string }[] }
 interface Notif { id: number; title: string; message: string; priority: string; is_read: boolean; created_at: string }
 interface Asg { id: string; subject: string; title: string; instructions: string | null; file_url: string | null; assigned_date: string; due_date: string | null }
+interface Update {
+  id: string; subject: string; note: string; update_date: string; homework_due: string | null;
+  attachment_url: string | null; attachment_thumb: string | null;
+  grade_id: number | null; enrollment_id: string | null; grades: { name: string } | null;
+}
 interface Ev { id: string; title: string; event_type: string; start_date: string; end_date: string | null; location: string | null; rsvp_enabled: boolean }
 interface Ann { id: string; title: string; content: string; category: string; is_pinned: boolean; requires_ack: boolean; publish_date: string | null; announcement_acks: { parent_id: string }[] }
 
@@ -39,6 +44,7 @@ export default function ParentHome() {
   const [bellOpen, setBellOpen] = useState(false);
   const [calOpen, setCalOpen] = useState(false);
   const [asgs, setAsgs] = useState<Asg[]>([]);
+  const [updates, setUpdates] = useState<Update[]>([]);
 
   useEffect(() => {
     if (configMissing) return;
@@ -94,6 +100,16 @@ export default function ParentHome() {
           a.enrollment_id === enr.id ||
           (a.grade_id != null && a.grades?.name === (active.students.enrollments.find((e) => e.status === "active")?.grade_name ?? "")));
         setAsgs(rows as Asg[]);
+      });
+    // Class updates feed: teacher notes for this child's grade + individual ones
+    supabase.from("class_updates")
+      .select("id, subject, note, update_date, homework_due, attachment_url, attachment_thumb, grade_id, enrollment_id, grades ( name )")
+      .order("created_at", { ascending: false }).limit(20)
+      .then(({ data }) => {
+        const gradeName = active.students.enrollments.find((e) => e.status === "active")?.grade_name ?? "";
+        const rows = ((data as unknown as Update[]) ?? []).filter((u) =>
+          u.enrollment_id === enr.id || (u.grade_id != null && u.grades?.name === gradeName));
+        setUpdates(rows);
       });
   }, [active]);
 
@@ -271,6 +287,44 @@ export default function ParentHome() {
               </>
             )}
         </section>
+
+        {/* Class Updates feed */}
+        {updates.length > 0 && (
+          <section className="rounded-xl bg-white p-5 shadow-sm">
+            <h2 className="mb-3 font-display text-lg font-semibold text-navy">
+              Class Updates{active ? ` — ${active.students.first_name}` : ""}
+            </h2>
+            <div className="space-y-4">
+              {updates.map((u) => (
+                <div key={u.id} className="border-b pb-4 last:border-0 last:pb-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-deep">{u.subject}</span>
+                    {u.enrollment_id && (
+                      <span className="rounded-full bg-gold/20 px-2.5 py-0.5 text-xs font-semibold text-navy">Just for {active?.students.first_name}</span>
+                    )}
+                    {u.homework_due && (
+                      <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">Homework due {u.homework_due}</span>
+                    )}
+                    <span className="ml-auto text-xs text-gray-400">
+                      {new Date(u.update_date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                    </span>
+                  </div>
+                  <p className="mt-1.5 whitespace-pre-wrap text-sm text-gray-700">{u.note}</p>
+                  {u.attachment_thumb && (
+                    <a href={u.attachment_url ?? "#"} target="_blank" rel="noreferrer" className="mt-2 inline-block">
+                      <img src={u.attachment_thumb} alt="Attached photo" loading="lazy"
+                        className="max-h-48 rounded-lg border border-gray-200 object-cover" />
+                    </a>
+                  )}
+                  {!u.attachment_thumb && u.attachment_url && (
+                    <a href={u.attachment_url} target="_blank" rel="noreferrer"
+                      className="mt-2 inline-block text-xs font-semibold text-royal hover:underline">View attachment ↗</a>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Assignments */}
         {asgs.length > 0 && (

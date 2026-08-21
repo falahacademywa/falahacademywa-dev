@@ -10,6 +10,7 @@ const nav = [
   { to: "/admin/fees", label: "Fees" },
   { to: "/admin/academics", label: "Academics & Qur'an" },
   { to: "/admin/assignments", label: "Assignments" },
+  { to: "/admin/updates", label: "Class Updates" },
   { to: "/admin/calendar", label: "Calendar" },
   { to: "/admin/announcements", label: "Announcements" },
   { to: "/admin/reports", label: "Reports" },
