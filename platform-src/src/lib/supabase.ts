@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+﻿import { createClient } from "@supabase/supabase-js";
 
 // The anon key is publishable by design; all protection lives in
 // row-level security policies (see supabase/platform_schema.sql).
@@ -6,7 +6,8 @@ import { createClient } from "@supabase/supabase-js";
 const SUPABASE_URL = "https://rlaqpzeqmmlrdeqfbjyq.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_pFmJCkvttv7J3JUsLGdD1g_UgXwCzyy";
 
-export const configMissing = SUPABASE_URL.startsWith("REPLACE");
+export const configMissing =
+  SUPABASE_URL.startsWith("REPLACE") || SUPABASE_ANON_KEY.startsWith("REPLACE");
 
 export const supabase = createClient(
   configMissing ? "https://placeholder.supabase.co" : SUPABASE_URL,
