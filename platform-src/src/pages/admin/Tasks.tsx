@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { supabase, configMissing } from "../../lib/supabase";
 
 // The school's working to-do list (mirror of the hub's TODO.md, phase 15).
@@ -62,6 +62,7 @@ export default function Tasks() {
   const [sortKey, setSortKey] = useState<SortKey>("urgency");
   const [asc, setAsc] = useState(true);
   const [loaded, setLoaded] = useState<string | null>(null);
+  const [openCode, setOpenCode] = useState<string | null>(null);   // row expanded for details
 
   useEffect(() => {
     if (configMissing) return;
@@ -155,18 +156,36 @@ export default function Tasks() {
           <tbody>
             {visible.map((r) => {
               const u = urgency(r);
+              const isOpen = openCode === r.code;
               return (
-                <tr key={r.code} className={`border-t border-gray-100 align-top ${r.is_done ? "text-gray-400" : "text-gray-700"}`}>
-                  <td className="px-3 py-2 font-semibold text-navy">{r.code}</td>
-                  <td className="px-3 py-2" title={u.label}>{u.icon}</td>
-                  <td className="px-3 py-2 text-xs">{r.category}</td>
-                  <td className="px-3 py-2 leading-snug">{renderTask(r.task)}</td>
-                  <td className="px-3 py-2 text-xs">{r.assigned_to}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-xs">{r.is_done ? r.done_on : r.due_text}</td>
-                  <td className="px-3 py-2">
-                    <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusStyles[r.status.toLowerCase()] ?? "bg-gray-100 text-gray-600"}`}>{r.status}</span>
-                  </td>
-                </tr>
+                <Fragment key={r.code}>
+                  <tr onClick={() => setOpenCode(isOpen ? null : r.code)} title="Click for details"
+                    className={`cursor-pointer border-t border-gray-100 align-top hover:bg-silver/40 ${r.is_done ? "text-gray-400" : "text-gray-700"} ${isOpen ? "bg-silver/40" : ""}`}>
+                    <td className="px-3 py-2 font-semibold text-navy">{r.code}</td>
+                    <td className="px-3 py-2" title={u.label}>{u.icon}</td>
+                    <td className="px-3 py-2 text-xs">{r.category}</td>
+                    <td className={`px-3 py-2 leading-snug ${isOpen ? "" : "line-clamp-2"}`}>{renderTask(r.task)}</td>
+                    <td className="px-3 py-2 text-xs">{r.assigned_to}</td>
+                    <td className="px-3 py-2 whitespace-nowrap text-xs">{r.is_done ? r.done_on : r.due_text}</td>
+                    <td className="px-3 py-2">
+                      <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusStyles[r.status.toLowerCase()] ?? "bg-gray-100 text-gray-600"}`}>{r.status}</span>
+                    </td>
+                  </tr>
+                  {isOpen && (
+                    <tr className="border-t border-gray-100 bg-silver/20">
+                      <td colSpan={7} className="px-6 py-4">
+                        <div className="grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                          <div><div className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Urgency</div><div>{u.icon} {u.label}</div></div>
+                          <div><div className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Assigned to</div><div>{r.assigned_to || "—"}</div></div>
+                          <div><div className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">{r.is_done ? "Done on" : "Due"}</div><div>{r.is_done ? r.done_on ?? "—" : r.due_text || "—"}</div></div>
+                          <div><div className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Last synced</div><div>{new Date(r.updated_at).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}</div></div>
+                        </div>
+                        <div className="mt-3 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Full task</div>
+                        <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-gray-800">{renderTask(r.task)}</p>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
               );
             })}
             {!visible.length && !configMissing && (
