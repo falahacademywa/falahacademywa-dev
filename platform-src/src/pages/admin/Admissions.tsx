@@ -71,6 +71,10 @@ export default function Admissions() {
   const [filter, setFilter] = useState<string>("under_review");
   const [msg, setMsg] = useState<string | null>(null);
   const [open, setOpen] = useState<Applicant | null>(null);
+  // Monthly fee typed on each applicant card before Accept → Enroll ($300 default;
+  // $200 for a second child of the same family; 0 = no fee).
+  const [fees, setFees] = useState<Record<string, string>>({});
+  const feeFor = (a: Applicant) => fees[a.id] ?? "300";
 
   async function load() {
     if (configMissing) return;
@@ -120,14 +124,8 @@ export default function Admissions() {
       // year AND the fee plan in one transaction (phase 14). The grade must be
       // chosen first; the fee defaults to the standard $300/month.
       if (!a.applied_grade_id) return setMsg("Choose the recommended grade before accepting.");
-      const gradeName = grades.find((g) => g.id === a.applied_grade_id)?.name ?? "the chosen grade";
-      const answer = window.prompt(
-        `Monthly fee for ${a.first_name} ${a.last_name} (${gradeName})?\n$300 one child · $200 second child of the same family · 0 for no fee`,
-        "300",
-      );
-      if (answer === null) return;
-      const fee = Number(answer.replace(/[^0-9.]/g, ""));
-      if (!Number.isFinite(fee) || fee < 0) return setMsg("Fee must be a number, 0 or more.");
+      const fee = Number(feeFor(a));
+      if (!Number.isFinite(fee) || fee < 0) return setMsg("Monthly fee must be a number, 0 or more.");
       const { data, error } = await supabase.rpc("accept_applicant", { p_applicant: a.id, p_monthly_fee: fee });
       if (error) return setMsg("Accept failed: " + error.message);
       const r = (data ?? {}) as { student_no?: number; grade?: string; school_year?: string; monthly_fee?: number; already_accepted?: boolean };
@@ -212,6 +210,14 @@ export default function Admissions() {
                   </select>
                   {a.applied_grade_text && <span className="text-gray-400">(applied for: {a.applied_grade_text})</span>}
                 </label>
+                {a.status !== "accepted" && (
+                  <label className="flex items-center gap-2 text-xs text-gray-500" title="$300 one child · $200 second child of the same family · 0 = no fee">
+                    Monthly fee: $
+                    <input type="number" min={0} step={50} value={feeFor(a)}
+                      onChange={(e) => setFees({ ...fees, [a.id]: e.target.value })}
+                      className="w-20 rounded border border-gray-300 px-2 py-1 text-sm" />
+                  </label>
+                )}
                 <div className="ml-auto flex gap-2">
                   <button onClick={() => setOpen(a)}
                     className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-semibold text-navy hover:bg-silver">Details</button>
