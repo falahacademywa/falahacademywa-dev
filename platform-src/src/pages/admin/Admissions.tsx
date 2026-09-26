@@ -274,7 +274,13 @@ function ApplicantDialog({ a, siblings, grades, onClose, onStatus, genderLabel }
   }, [onClose]);
   const d = a.details ?? {};
   const age = ageYears(a.date_of_birth);
-  const docs = Array.isArray(d.documents) ? d.documents : d.documents ? [d.documents] : [];
+  // The website form sends `documents` as one newline-joined string: Drive links
+  // for the uploaded files, plus optional notes such as "No files uploaded" or
+  // "Parent will provide the missing document(s)…". Only real URLs become links.
+  const docLines = (Array.isArray(d.documents) ? d.documents : d.documents ? String(d.documents).split(/\r?\n/) : [])
+    .map((s) => String(s).trim()).filter(Boolean);
+  const docs = docLines.filter((s) => /^https?:\/\//i.test(s));
+  const docNotes = docLines.filter((s) => !/^https?:\/\//i.test(s) && !/^no files uploaded$/i.test(s));
   const recommended = grades.find((g) => g.id === a.applied_grade_id)?.name;
 
   return (
@@ -343,18 +349,17 @@ function ApplicantDialog({ a, siblings, grades, onClose, onStatus, genderLabel }
             ) : <p className="text-sm text-gray-500">None found — no enrolled student shares this family's phone, email or mother's name.</p>}
           </section>
 
-          {(d.comments || a.notes || docs.length > 0) && (
-            <section>
-              <h3 className="mb-2 text-sm font-semibold text-navy">Notes &amp; documents</h3>
-              {d.comments && <p className="mb-2 whitespace-pre-line text-sm text-gray-700">{d.comments}</p>}
-              {a.notes && <p className="mb-2 whitespace-pre-line text-sm text-gray-700">{a.notes}</p>}
-              {docs.length > 0 && (
-                <ul className="list-inside list-disc text-sm">
-                  {docs.map((u, i) => <li key={i}><a href={u} target="_blank" rel="noopener" className="text-royal hover:underline">Uploaded document {i + 1}</a></li>)}
-                </ul>
-              )}
-            </section>
-          )}
+          <section>
+            <h3 className="mb-2 text-sm font-semibold text-navy">Notes &amp; documents</h3>
+            {d.comments && <p className="mb-2 whitespace-pre-line text-sm text-gray-700">{d.comments}</p>}
+            {a.notes && <p className="mb-2 whitespace-pre-line text-sm text-gray-700">{a.notes}</p>}
+            {docNotes.map((n, i) => <p key={i} className="mb-2 text-sm text-amber-700">{n}</p>)}
+            {docs.length > 0 ? (
+              <ul className="list-inside list-disc text-sm">
+                {docs.map((u, i) => <li key={i}><a href={u} target="_blank" rel="noopener" className="text-royal hover:underline">Uploaded document {i + 1}</a></li>)}
+              </ul>
+            ) : <p className="text-sm text-gray-500">No documents uploaded.</p>}
+          </section>
         </div>
 
         {a.status !== "accepted" && (
