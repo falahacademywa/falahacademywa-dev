@@ -116,9 +116,24 @@ export default function Admissions() {
   async function setStatus(a: Applicant, status: string) {
     setMsg(null);
     if (status === "accepted") {
-      const { data, error } = await supabase.rpc("accept_applicant", { p_applicant: a.id });
+      // Accept → Enroll creates the student, the enrollment in the current school
+      // year AND the fee plan in one transaction (phase 14). The grade must be
+      // chosen first; the fee defaults to the standard $300/month.
+      if (!a.applied_grade_id) return setMsg("Choose the recommended grade before accepting.");
+      const gradeName = grades.find((g) => g.id === a.applied_grade_id)?.name ?? "the chosen grade";
+      const answer = window.prompt(
+        `Monthly fee for ${a.first_name} ${a.last_name} (${gradeName})?\n$300 one child · $200 second child of the same family · 0 for no fee`,
+        "300",
+      );
+      if (answer === null) return;
+      const fee = Number(answer.replace(/[^0-9.]/g, ""));
+      if (!Number.isFinite(fee) || fee < 0) return setMsg("Fee must be a number, 0 or more.");
+      const { data, error } = await supabase.rpc("accept_applicant", { p_applicant: a.id, p_monthly_fee: fee });
       if (error) return setMsg("Accept failed: " + error.message);
-      setMsg(`${a.first_name} ${a.last_name} accepted — student record created (${data ? "ID assigned" : "ok"}).`);
+      const r = (data ?? {}) as { student_no?: number; grade?: string; school_year?: string; monthly_fee?: number; already_accepted?: boolean };
+      setMsg(r.already_accepted
+        ? `${a.first_name} ${a.last_name} was already accepted (student #${r.student_no}).`
+        : `${a.first_name} ${a.last_name} accepted — student #${r.student_no} enrolled in ${r.grade} for ${r.school_year} with a $${Number(r.monthly_fee ?? fee).toFixed(0)}/month fee plan.`);
     } else {
       const { error } = await supabase.from("applicants").update({ status }).eq("id", a.id);
       if (error) return setMsg("Update failed: " + error.message);
