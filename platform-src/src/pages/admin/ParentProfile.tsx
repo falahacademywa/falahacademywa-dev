@@ -20,11 +20,12 @@ interface Account {
 interface StudentOpt { id: string; first_name: string; last_name: string }
 
 const rel = (r: string) => ({ father: "Father", mother: "Mother" }[r.toLowerCase()] ?? r.charAt(0).toUpperCase() + r.slice(1));
-export const RelBadge = ({ r }: { r: string }) => {
+export const RelBadge = ({ r, size = "sm" }: { r: string; size?: "sm" | "lg" }) => {
   const l = r.toLowerCase();
   const letter = l === "father" ? "F" : l === "mother" ? "M" : "G";
   const cls = l === "father" ? "bg-navy text-white" : l === "mother" ? "bg-rose-500 text-white" : "bg-gray-400 text-white";
-  return <span title={rel(r)} className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${cls}`}>{letter}</span>;
+  const dim = size === "lg" ? "h-8 w-8 text-sm" : "h-5 w-5 text-[10px]";
+  return <span title={rel(r)} className={`inline-flex shrink-0 items-center justify-center rounded-full font-bold ${dim} ${cls}`}>{letter}</span>;
 };
 
 export default function ParentProfile() {

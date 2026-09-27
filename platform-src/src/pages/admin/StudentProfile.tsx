@@ -392,9 +392,14 @@ export default function StudentProfile() {
           <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-gray-400">Parents &amp; Guardians</h2>
           {(() => {
             const accounts = s.parent_students.map((ps) => ps.profiles);
+            const accOf = (email: string | null) => email ? accounts.find((a) => a.email?.toLowerCase() === email.toLowerCase()) : undefined;
+            // "no portal account" is only worth saying when NO parent in the
+            // family has one; if one parent holds the login, stay quiet on the other.
+            const familyHasAccount = s.guardians.some((g) => accOf(g.email));
             const badge = (email: string | null) => {
-              const acc = email ? accounts.find((a) => a.email?.toLowerCase() === email.toLowerCase()) : undefined;
-              if (!acc) return <span className="rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-semibold text-gray-600">no portal account</span>;
+              const acc = accOf(email);
+              if (!acc) return familyHasAccount ? null
+                : <span className="rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-semibold text-gray-600">no portal account</span>;
               return acc.must_change_password
                 ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">invited — hasn't signed in</span>
                 : <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-700">account active</span>;
@@ -408,20 +413,24 @@ export default function StudentProfile() {
                   <div key={g.id} className="border-b py-2 text-sm last:border-0"
                     onContextMenu={(e) => { e.preventDefault(); setMenu({ x: e.clientX, y: e.clientY, g }); }}
                     title="Right-click for options">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Link to={`/admin/parents/${g.id}`} className="font-semibold text-navy hover:text-royal hover:underline">{g.name}</Link>
-                      <span className="text-xs capitalize text-gray-400">({g.relationship})</span>
-                      <RelBadge r={g.relationship} />
-                      {g.sort === 1 && <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-semibold text-navy">Primary contact</span>}
-                      {badge(g.email)}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Link to={`/admin/parents/${g.id}`} className="font-semibold text-navy hover:text-royal hover:underline">{g.name}</Link>
+                          <span className="text-xs capitalize text-gray-400">({g.relationship})</span>
+                          {g.sort === 1 && <span className="rounded-full bg-gold/20 px-2 py-0.5 text-[10px] font-semibold text-navy">Primary contact</span>}
+                          {badge(g.email)}
+                        </div>
+                        <div className="mt-0.5 text-gray-600">
+                          {g.phone && <span className="mr-3">📞 {usPhone(g.phone)}</span>}
+                          {g.email && <span>✉️ {g.email}</span>}
+                        </div>
+                        {g.email && addrMap[g.email.toLowerCase()] && (
+                          <div className="mt-0.5 text-xs text-gray-500">🏠 {addrMap[g.email.toLowerCase()]}</div>
+                        )}
+                      </div>
+                      <RelBadge r={g.relationship} size="lg" />
                     </div>
-                    <div className="mt-0.5 text-gray-600">
-                      {g.phone && <span className="mr-3">📞 {usPhone(g.phone)}</span>}
-                      {g.email && <span>✉️ {g.email}</span>}
-                    </div>
-                    {g.email && addrMap[g.email.toLowerCase()] && (
-                      <div className="mt-0.5 text-xs text-gray-500">🏠 {addrMap[g.email.toLowerCase()]}</div>
-                    )}
                   </div>
                 ))}
                 {/* accounts that exist but aren't in the guardians registry */}
