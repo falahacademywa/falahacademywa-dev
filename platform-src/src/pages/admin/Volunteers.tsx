@@ -139,7 +139,11 @@ export default function Volunteers() {
                   {r.under_18 && <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">Under 18 · parent consent</span>}
                   {flagged && <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">Disclosure — read before contacting</span>}
                   {r.resume_path && (
-                    <button onClick={() => openResume(r.resume_path!, setMsg)} className="rounded-full bg-royal/10 px-2.5 py-0.5 text-xs font-semibold text-royal hover:bg-royal/20">📄 Résumé</button>
+                    <button onClick={() => openResume(r.resume_path!, setMsg)} title="Open the attached résumé"
+                      className="inline-flex items-center gap-1 rounded-full bg-royal/10 px-2.5 py-0.5 text-xs font-semibold text-royal hover:bg-royal/20">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                      Résumé
+                    </button>
                   )}
                   {!["declined", "withdrawn"].includes(r.status) && (
                     <span className="rounded-full bg-navy/10 px-2.5 py-0.5 text-xs text-navy" title={CHECKS.map(([k, l]) => `${r.checks?.[k] ? "✓" : "○"} ${l}`).join("\n")}>
@@ -278,7 +282,10 @@ function VolunteerDialog({ r, grades, editable, onClose, onSave, onStatus, onDel
           {editable && <button onClick={() => onStatus("withdrawn")} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-silver">Withdrawn</button>}
           <a href={`mailto:${r.email}`} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-navy hover:bg-silver">E-mail</a>
           {r.resume_path && (
-            <button onClick={() => openResume(r.resume_path!, onErr)} className="rounded-lg border border-royal/40 px-3 py-1.5 text-sm font-semibold text-royal hover:bg-royal/10">📄 Open résumé</button>
+            <button onClick={() => openResume(r.resume_path!, onErr)} className="inline-flex items-center gap-1.5 rounded-lg border border-royal/40 px-3 py-1.5 text-sm font-semibold text-royal hover:bg-royal/10">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+              Open résumé
+            </button>
           )}
           <div className="ml-auto flex gap-2">
             {editable && <button onClick={onDelete} className="text-xs text-gray-400 hover:text-red-600">Delete</button>}

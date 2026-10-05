@@ -65,6 +65,7 @@ function validate() {
   if (!v('v_dob')) { fieldError('v_dob', 'Please enter your date of birth'); ok = false; }
   var age = ageOn(v('v_dob'));
   if (age !== null && age < 16) { fieldError('v_dob', 'Volunteers must be at least 16'); ok = false; }
+  if (age !== null && (age > 90 || age < 0)) { fieldError('v_dob', 'Please check the date of birth'); ok = false; }
   if (age !== null && age < 18) {
     if (v('v_guardian_name').length < 3) { fieldError('v_guardian_name', 'A parent or guardian name is required for applicants under 18'); ok = false; }
     if (!isValidUSPhone(v('v_guardian_phone'))) { fieldError('v_guardian_phone', 'Please enter the parent or guardian phone'); ok = false; }
@@ -139,7 +140,7 @@ var FIELD_RULES = {
   v_phone:  function (x) { return isValidUSPhone(x) ? '' : 'Please enter a valid US phone, e.g. (206) 555-0123'; },
   v_city:   function (x) { return x.length >= 2 ? '' : 'Please enter your city'; },
   v_zip:    function (x) { return !x || /^\d{5}$/.test(x) ? '' : 'ZIP is 5 digits'; },
-  v_dob:    function (x) { if (!x) return 'Please enter your date of birth'; var a = ageOn(x); return a !== null && a < 16 ? 'Volunteers must be at least 16' : ''; },
+  v_dob:    function (x) { if (!x) return 'Please enter your date of birth'; var a = ageOn(x); if (a !== null && a < 16) return 'Volunteers must be at least 16'; return a !== null && (a > 90 || a < 0) ? 'Please check the date of birth' : ''; },
   v_experience: function (x) { return x.length >= 10 ? '' : 'A sentence or two about your experience, please'; },
   v_guardian_name:  function (x) { return x.length >= 3 ? '' : 'A parent or guardian name is required'; },
   v_guardian_phone: function (x) { return isValidUSPhone(x) ? '' : 'Please enter the parent or guardian phone'; },
