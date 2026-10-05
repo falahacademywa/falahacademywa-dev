@@ -175,6 +175,11 @@
             <div class="form-group"><label class="form-label" for="v_firstaid">First aid / CPR certified?</label><select id="v_firstaid" class="form-select"><option value="">Please select</option><option value="yes">Yes</option><option value="no">No</option></select></div>
           </div>
           <div class="form-group"><label class="form-label" for="v_prior">Have you volunteered or worked at another school or masjid? Where, when?</label><input type="text" id="v_prior" class="form-input" /></div>
+          <div class="form-group">
+            <label class="form-label" for="v_resume">Résumé (optional) <span style="font-weight:400;color:var(--text-muted);">PDF or Word, up to 5 MB</span></label>
+            <input type="file" id="v_resume" class="form-input" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onchange="volunteerResumeChanged(this)" style="padding:8px 14px;" />
+            <p id="v_resume_name" class="vol-note" style="margin:6px 0 0;display:none;"></p>
+          </div>
 
           <p class="vol-section-title">5. References <span class="required">*</span></p>
           <p class="vol-note">Two people who know your work with children or your character, not family members. We will contact them.</p>

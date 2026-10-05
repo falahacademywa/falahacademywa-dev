@@ -171,15 +171,53 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 });
 
+// ---- résumé (optional): PDF or Word, 5 MB, uploaded to the private volunteer-docs bucket ----
+var RESUME_TYPES = { 'application/pdf': 'pdf', 'application/msword': 'doc', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx' };
+var resumeFile = null;
+window.volunteerResumeChanged = function (input) {
+  var file = input.files && input.files[0];
+  var nameEl = document.getElementById('v_resume_name');
+  clearFieldError('v_resume');
+  resumeFile = null;
+  if (nameEl) nameEl.style.display = 'none';
+  if (!file) return;
+  var ext = (file.name.split('.').pop() || '').toLowerCase();
+  if (!RESUME_TYPES[file.type] && ['pdf', 'doc', 'docx'].indexOf(ext) === -1) { fieldError('v_resume', 'PDF or Word documents only (.pdf, .doc, .docx)'); input.value = ''; return; }
+  if (file.size > 5 * 1024 * 1024) { fieldError('v_resume', 'The file must be under 5 MB'); input.value = ''; return; }
+  resumeFile = file;
+  if (nameEl) { nameEl.textContent = 'Attached: ' + file.name + ' (' + Math.round(file.size / 1024) + ' KB)'; nameEl.style.display = 'block'; }
+};
+function uploadResume() {
+  if (!resumeFile) return Promise.resolve(null);
+  var ext = (resumeFile.name.split('.').pop() || 'pdf').toLowerCase();
+  var safe = resumeFile.name.replace(/\.[^.]+$/, '').replace(/[^A-Za-z0-9_-]+/g, '_').slice(0, 40) || 'resume';
+  var id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2);
+  var path = 'inbox/' + id + '-' + safe + '.' + ext;
+  var type = RESUME_TYPES[resumeFile.type] ? resumeFile.type : (ext === 'pdf' ? 'application/pdf' : ext === 'doc' ? 'application/msword' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+  return fetch(PLATFORM_URL + '/storage/v1/object/volunteer-docs/' + path, {
+    method: 'POST',
+    headers: { 'apikey': PLATFORM_KEY, 'Authorization': 'Bearer ' + PLATFORM_KEY, 'Content-Type': type, 'x-upsert': 'false' },
+    body: resumeFile
+  }).then(function (res) {
+    if (!res.ok) return res.text().then(function (t) { throw new Error('resume upload ' + res.status + ' ' + t); });
+    return path;
+  });
+}
+
 window.submitVolunteerForm = function (e) {
   e.preventDefault();
   if (!validate()) return;
   var btn = document.getElementById('volunteer-submit-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
-  fetch(PLATFORM_URL + '/rest/v1/volunteer_applications', {
-    method: 'POST',
-    headers: { 'apikey': PLATFORM_KEY, 'Authorization': 'Bearer ' + PLATFORM_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-    body: JSON.stringify(buildPayload())
+  if (btn) { btn.disabled = true; btn.textContent = resumeFile ? 'Uploading résumé...' : 'Sending...'; }
+  uploadResume().then(function (resumePath) {
+    if (btn) btn.textContent = 'Sending...';
+    var payload = buildPayload();
+    if (resumePath) payload.resume_path = resumePath;
+    return fetch(PLATFORM_URL + '/rest/v1/volunteer_applications', {
+      method: 'POST',
+      headers: { 'apikey': PLATFORM_KEY, 'Authorization': 'Bearer ' + PLATFORM_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+      body: JSON.stringify(payload)
+    });
   }).then(function (res) {
     if (!res.ok) return res.text().then(function (t) { throw new Error(res.status + ' ' + t); });
     var formEl = document.getElementById('volunteer-form-el');
@@ -189,6 +227,9 @@ window.submitVolunteerForm = function (e) {
   }).catch(function (err) {
     console.error('Volunteer form error:', err);
     if (btn) { btn.disabled = false; btn.textContent = 'Submit Application →'; }
-    alert('Something went wrong. Please try again, or e-mail us at falahacademywa@gmail.com');
+    var isUpload = /resume upload/.test(String(err && err.message));
+    alert(isUpload
+      ? 'We could not upload your résumé. Please try a smaller PDF, or remove the file and submit without it — you can e-mail it to falahacademywa@gmail.com instead.'
+      : 'Something went wrong. Please try again, or e-mail us at falahacademywa@gmail.com');
   });
 };

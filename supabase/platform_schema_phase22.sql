@@ -96,6 +96,25 @@ drop trigger if exists volunteer_applications_notify on public.volunteer_applica
 create trigger volunteer_applications_notify after insert on public.volunteer_applications
   for each row execute function public.trg_volunteer_notify();
 
+-- ---------- 1b. résumé upload (PDF / Word, 5 MB) ----------
+-- The website uploads the file straight into the private bucket before the
+-- insert; the row keeps the path. Admins open it through a signed URL.
+alter table public.volunteer_applications add column if not exists resume_path text;
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('volunteer-docs', 'volunteer-docs', false, 5242880,
+        array['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'])
+on conflict (id) do update set public = false, file_size_limit = 5242880,
+  allowed_mime_types = array['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+drop policy if exists volunteer_docs_public_insert on storage.objects;
+create policy volunteer_docs_public_insert on storage.objects for insert to anon
+  with check (bucket_id = 'volunteer-docs' and name like 'inbox/%');
+drop policy if exists volunteer_docs_view on storage.objects;
+create policy volunteer_docs_view on storage.objects for select to authenticated
+  using (bucket_id = 'volunteer-docs' and public.can_view('volunteers'));
+drop policy if exists volunteer_docs_edit on storage.objects;
+create policy volunteer_docs_edit on storage.objects for delete to authenticated
+  using (bucket_id = 'volunteer-docs' and public.can_edit('volunteers'));
+
 -- ---------- 2. class update posted -> admins ----------
 create or replace function public.trg_class_update_admin_notify()
 returns trigger language plpgsql security definer set search_path = public as $$

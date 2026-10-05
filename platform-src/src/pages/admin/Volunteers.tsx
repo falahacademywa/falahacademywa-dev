@@ -16,7 +16,14 @@ interface Row {
   interests: string[]; experience: string | null; languages: string | null; first_aid: boolean | null; prior_volunteering: string | null;
   references_info: Ref[]; disclosures: { convicted?: boolean; abuse_finding?: boolean; registry?: boolean; explanation?: string | null };
   status: string; checks: Record<string, string>; assigned_grade_id: number | null; notes: string | null;
-  created_at: string; resolved_at: string | null;
+  resume_path: string | null; created_at: string; resolved_at: string | null;
+}
+
+// private bucket: a short-lived signed link, opened in a new tab
+async function openResume(path: string, onErr: (m: string) => void) {
+  const { data, error } = await supabase.storage.from("volunteer-docs").createSignedUrl(path, 600);
+  if (error || !data?.signedUrl) return onErr("Could not open the résumé: " + (error?.message ?? "no link"));
+  window.open(data.signedUrl, "_blank", "noopener");
 }
 interface Grade { id: number; name: string }
 
@@ -131,6 +138,9 @@ export default function Volunteers() {
                   <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusStyles[r.status] ?? "bg-gray-100"}`}>{STATUSES.find(([v]) => v === r.status)?.[1] ?? r.status}</span>
                   {r.under_18 && <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">Under 18 · parent consent</span>}
                   {flagged && <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">Disclosure — read before contacting</span>}
+                  {r.resume_path && (
+                    <button onClick={() => openResume(r.resume_path!, setMsg)} className="rounded-full bg-royal/10 px-2.5 py-0.5 text-xs font-semibold text-royal hover:bg-royal/20">📄 Résumé</button>
+                  )}
                   {!["declined", "withdrawn"].includes(r.status) && (
                     <span className="rounded-full bg-navy/10 px-2.5 py-0.5 text-xs text-navy" title={CHECKS.map(([k, l]) => `${r.checks?.[k] ? "✓" : "○"} ${l}`).join("\n")}>
                       {checksDone(r)}/{CHECKS.length} checks
@@ -174,7 +184,7 @@ export default function Volunteers() {
       </div>
 
       {open && <VolunteerDialog r={open} grades={grades} editable={editable} onClose={() => setOpen(null)}
-        onSave={(patch) => saveDetails(open, patch)} onStatus={(s) => setStatus(open, s)} onDelete={() => remove(open)} />}
+        onSave={(patch) => saveDetails(open, patch)} onStatus={(s) => setStatus(open, s)} onDelete={() => remove(open)} onErr={setMsg} />}
     </div>
   );
 }
@@ -188,9 +198,9 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function VolunteerDialog({ r, grades, editable, onClose, onSave, onStatus, onDelete }: {
+function VolunteerDialog({ r, grades, editable, onClose, onSave, onStatus, onDelete, onErr }: {
   r: Row; grades: Grade[]; editable: boolean; onClose: () => void;
-  onSave: (patch: Partial<Row>) => void; onStatus: (s: string) => void; onDelete: () => void;
+  onSave: (patch: Partial<Row>) => void; onStatus: (s: string) => void; onDelete: () => void; onErr: (m: string) => void;
 }) {
   const [checks, setChecks] = useState<Record<string, string>>(r.checks ?? {});
   const [notes, setNotes] = useState(r.notes ?? "");
@@ -267,6 +277,9 @@ function VolunteerDialog({ r, grades, editable, onClose, onSave, onStatus, onDel
           )}
           {editable && <button onClick={() => onStatus("withdrawn")} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-silver">Withdrawn</button>}
           <a href={`mailto:${r.email}`} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-navy hover:bg-silver">E-mail</a>
+          {r.resume_path && (
+            <button onClick={() => openResume(r.resume_path!, onErr)} className="rounded-lg border border-royal/40 px-3 py-1.5 text-sm font-semibold text-royal hover:bg-royal/10">📄 Open résumé</button>
+          )}
           <div className="ml-auto flex gap-2">
             {editable && <button onClick={onDelete} className="text-xs text-gray-400 hover:text-red-600">Delete</button>}
             <button onClick={onClose} className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-gray-600 hover:bg-silver">Close</button>
