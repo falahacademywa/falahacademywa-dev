@@ -132,6 +132,45 @@ function buildPayload() {
   };
 }
 
+// ---- per-field checks as soon as the visitor leaves a field ----
+var FIELD_RULES = {
+  v_name:   function (x) { return x.length >= 3 ? '' : 'Please enter your full name'; },
+  v_email:  function (x) { return isValidEmail(x) ? '' : 'Please enter a valid e-mail address, e.g. name@example.com'; },
+  v_phone:  function (x) { return isValidUSPhone(x) ? '' : 'Please enter a valid US phone, e.g. (206) 555-0123'; },
+  v_city:   function (x) { return x.length >= 2 ? '' : 'Please enter your city'; },
+  v_zip:    function (x) { return !x || /^\d{5}$/.test(x) ? '' : 'ZIP is 5 digits'; },
+  v_dob:    function (x) { if (!x) return 'Please enter your date of birth'; var a = ageOn(x); return a !== null && a < 16 ? 'Volunteers must be at least 16' : ''; },
+  v_experience: function (x) { return x.length >= 10 ? '' : 'A sentence or two about your experience, please'; },
+  v_guardian_name:  function (x) { return x.length >= 3 ? '' : 'A parent or guardian name is required'; },
+  v_guardian_phone: function (x) { return isValidUSPhone(x) ? '' : 'Please enter the parent or guardian phone'; },
+  v_ref1_name: function (x) { return x.length >= 3 ? '' : 'Reference name'; },
+  v_ref2_name: function (x) { return x.length >= 3 ? '' : 'Reference name'; },
+  v_ref1_email: function (x) { return !x || isValidEmail(x) ? '' : 'Please enter a valid e-mail address'; },
+  v_ref2_email: function (x) { return !x || isValidEmail(x) ? '' : 'Please enter a valid e-mail address'; },
+  v_ref1_phone: function (x) { return !x || isValidUSPhone(x) ? '' : 'Please enter a valid US phone'; },
+  v_ref2_phone: function (x) { return !x || isValidUSPhone(x) ? '' : 'Please enter a valid US phone'; }
+};
+function clearFieldError(id) {
+  var field = document.getElementById(id);
+  if (!field) return;
+  field.style.borderColor = '';
+  var err = field.parentElement.querySelector('.field-error');
+  if (err) err.remove();
+}
+function checkField(id) {
+  var rule = FIELD_RULES[id]; if (!rule) return true;
+  var msg = rule(v(id));
+  if (msg) fieldError(id, msg); else clearFieldError(id);
+  return !msg;
+}
+document.addEventListener('DOMContentLoaded', function () {
+  Object.keys(FIELD_RULES).forEach(function (id) {
+    var el = document.getElementById(id); if (!el) return;
+    el.addEventListener('blur', function () { if (v(id) || el.parentElement.querySelector('.field-error')) checkField(id); });
+    el.addEventListener('input', function () { if (el.parentElement.querySelector('.field-error')) checkField(id); });
+  });
+});
+
 window.submitVolunteerForm = function (e) {
   e.preventDefault();
   if (!validate()) return;
