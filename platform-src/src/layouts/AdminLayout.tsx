@@ -8,6 +8,7 @@ import { moduleForPath } from "../lib/permissions";
 const nav = [
   { to: "/admin", label: "Dashboard", end: true, module: null },
   { to: "/admin/students", label: "Students", module: "students" },
+  { to: "/admin/attendance", label: "Attendance", module: "students" },
   { to: "/admin/admissions", label: "Admissions", module: "admissions" },
   { to: "/admin/volunteers", label: "Volunteers", module: "volunteers" },
   { to: "/admin/parents", label: "Parents", module: "parents" },
@@ -16,7 +17,6 @@ const nav = [
   { to: "/admin/academics", label: "Academics & Qur'an", module: "academics" },
   { to: "/admin/assignments", label: "Assignments", module: "academics" },
   { to: "/admin/updates", label: "Class Updates", module: "academics" },
-  { to: "/admin/activity", label: "Activity Calendar", module: "academics" },
   { to: "/admin/calendar", label: "Calendar", module: "calendar" },
   { to: "/admin/announcements", label: "Announcements", module: "announcements" },
   { to: "/admin/feedback", label: "Feedback", module: "feedback" },
