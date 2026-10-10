@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { supabase, configMissing } from "../lib/supabase";
@@ -30,14 +30,22 @@ const nav = [
 // "Tasks (red, orange)" and "Fees (Zelle to match, unpaid)" — the hover title explains them.
 const COUNT_HINT: Record<string, string> = {
   "/admin/tasks": "red tasks (due within 7 days or overdue), orange tasks (due within 3 weeks)",
-  "/admin/fees": "Zelle payments waiting to be matched, families unpaid this month",
+  "/admin/fees": "families paid this month, families unpaid this month",
+};
+// Colour per number for the two-part items; single counts use the menu's own text colour.
+const COUNT_COLORS: Record<string, string[]> = {
+  "/admin/tasks": ["text-red-400", "text-orange-400"],
+  "/admin/fees": ["text-green-400", "text-red-400"],
 };
 
-function MenuBadge({ values, to }: { values?: number[]; to?: string }) {
+function MenuBadge({ values, to, active }: { values?: number[]; to?: string; active?: boolean }) {
   if (!values || !values.some((v) => v > 0)) return null;
+  const colors = to && !active ? COUNT_COLORS[to] : undefined;
   return (
     <span className="shrink-0 font-semibold" title={to ? COUNT_HINT[to] : undefined}>
-      ({values.join(", ")})
+      ({values.map((v, i) => (
+        <Fragment key={i}>{i > 0 && ", "}<span className={colors?.[i]}>{v}</span></Fragment>
+      ))})
     </span>
   );
 }
@@ -170,10 +178,12 @@ export default function AdminLayout() {
                 `block rounded-lg px-3 py-2 text-sm transition ${
                   isActive ? "bg-emerald-brand font-semibold text-white" : "text-white/80 hover:bg-white/10"
                 }`}>
-              <span className="flex items-center gap-1.5">
-                <span>{n.label}</span>
-                <MenuBadge values={counts[n.to]} to={n.to} />
-              </span>
+              {({ isActive }) => (
+                <span className="flex items-center gap-1.5">
+                  <span>{n.label}</span>
+                  <MenuBadge values={counts[n.to]} to={n.to} active={isActive} />
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>

@@ -1,6 +1,6 @@
 // Action counts shown beside admin menu items (TODO #131). Each entry is the number of things
 // waiting for the admin on that page; a page with nothing waiting shows no badge.
-// Two-part counts are [primary, secondary]: Tasks = [red, orange], Fees = [pending Zelle, unpaid].
+// Two-part counts: Tasks = [red, orange], Fees = [paid, unpaid] this month (same rule as the Dashboard tile).
 import { supabase } from "./supabase";
 import { todayStr } from "./dates";
 import { type Task, urgency } from "./tasks";
@@ -42,15 +42,14 @@ export async function loadMenuCounts(can: (module: string) => boolean): Promise<
 
   if (can("fees"))
     jobs.push((async () => {
-      const pending = await count("zelle_inbox", (q) => q.eq("status", "pending"));
-      // unpaid = same rule as the Dashboard "Fees this month" tile
+      // paid / unpaid = same rule as the Dashboard "Fees this month" tile
       const { data } = await supabase.from("fee_plans")
         .select("id, start_date, enrollments!inner ( status ), payments ( payment_date )")
         .eq("status", "active").eq("enrollments.status", "active").gt("total_amount", 0);
       const due = ((data ?? []) as { start_date: string | null; payments: { payment_date: string }[] }[])
         .filter((p) => !p.start_date || p.start_date <= today);
       const unpaid = due.filter((p) => !p.payments.some((x) => x.payment_date.startsWith(month))).length;
-      out["/admin/fees"] = [pending, unpaid];
+      out["/admin/fees"] = [due.length - unpaid, unpaid];
     })());
 
   if (can("students"))
