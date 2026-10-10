@@ -26,20 +26,18 @@ const nav = [
   { to: "/admin/settings", label: "Settings", module: "settings" },
 ];
 
-// Red pill = first number (needs action); amber pill = second number (Tasks: orange; Fees: unpaid).
-const BADGE_HINT: Record<string, [string, string?]> = {
-  "/admin/tasks": ["red tasks (due within 7 days or overdue)", "orange tasks (due within 3 weeks)"],
-  "/admin/fees": ["Zelle payments waiting to be matched", "families unpaid this month"],
+// Count shown as plain text after the label, e.g. "Volunteers (1)"; two-part items read
+// "Tasks (red, orange)" and "Fees (Zelle to match, unpaid)" — the hover title explains them.
+const COUNT_HINT: Record<string, string> = {
+  "/admin/tasks": "red tasks (due within 7 days or overdue), orange tasks (due within 3 weeks)",
+  "/admin/fees": "Zelle payments waiting to be matched, families unpaid this month",
 };
 
 function MenuBadge({ values, to }: { values?: number[]; to?: string }) {
   if (!values || !values.some((v) => v > 0)) return null;
-  const hint = to ? BADGE_HINT[to] : undefined;
-  const pill = "min-w-5 rounded-full px-1.5 text-center text-[10px] font-bold leading-5 text-white";
   return (
-    <span className="flex shrink-0 gap-1">
-      {values[0] > 0 && <span className={`${pill} bg-red-500`} title={hint?.[0]}>{values[0]}</span>}
-      {values.length > 1 && values[1] > 0 && <span className={`${pill} bg-amber-500`} title={hint?.[1]}>{values[1]}</span>}
+    <span className="shrink-0 font-semibold" title={to ? COUNT_HINT[to] : undefined}>
+      ({values.join(", ")})
     </span>
   );
 }
@@ -172,7 +170,7 @@ export default function AdminLayout() {
                 `block rounded-lg px-3 py-2 text-sm transition ${
                   isActive ? "bg-emerald-brand font-semibold text-white" : "text-white/80 hover:bg-white/10"
                 }`}>
-              <span className="flex items-center justify-between gap-2">
+              <span className="flex items-center gap-1.5">
                 <span>{n.label}</span>
                 <MenuBadge values={counts[n.to]} to={n.to} />
               </span>
