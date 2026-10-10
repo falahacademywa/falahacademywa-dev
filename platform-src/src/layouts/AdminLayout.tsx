@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { supabase, configMissing } from "../lib/supabase";
 import { moduleForPath } from "../lib/permissions";
+import { loadMenuCounts, markClassUpdatesSeen, type MenuCounts } from "../lib/menuCounts";
 
 // module = the staff permission that unlocks the entry (phase 19); admins see all
 const nav = [
@@ -25,6 +26,24 @@ const nav = [
   { to: "/admin/settings", label: "Settings", module: "settings" },
 ];
 
+// Red pill = first number (needs action); amber pill = second number (Tasks: orange; Fees: unpaid).
+const BADGE_HINT: Record<string, [string, string?]> = {
+  "/admin/tasks": ["red tasks (due within 7 days or overdue)", "orange tasks (due within 3 weeks)"],
+  "/admin/fees": ["Zelle payments waiting to be matched", "families unpaid this month"],
+};
+
+function MenuBadge({ values, to }: { values?: number[]; to?: string }) {
+  if (!values || !values.some((v) => v > 0)) return null;
+  const hint = to ? BADGE_HINT[to] : undefined;
+  const pill = "min-w-5 rounded-full px-1.5 text-center text-[10px] font-bold leading-5 text-white";
+  return (
+    <span className="flex shrink-0 gap-1">
+      {values[0] > 0 && <span className={`${pill} bg-red-500`} title={hint?.[0]}>{values[0]}</span>}
+      {values.length > 1 && values[1] > 0 && <span className={`${pill} bg-amber-500`} title={hint?.[1]}>{values[1]}</span>}
+    </span>
+  );
+}
+
 interface Notif { id: number; title: string; message: string; priority: string; is_read: boolean; link_path: string | null; created_at: string }
 
 export default function AdminLayout() {
@@ -33,7 +52,9 @@ export default function AdminLayout() {
   const loc = useLocation();
   const isStaff = profile?.role === "staff";
   const portalLabel = isStaff ? (profile?.title?.trim() || "Office Staff") : "Administration Portal";
-  const visibleNav = nav.filter((n) => !n.module || can(n.module));
+  // Dashboard stays first; every other item is sorted A–Z, so new menu items find their own place.
+  const visibleNav = nav.filter((n) => !n.module || can(n.module))
+    .sort((a, b) => (a.to === "/admin" ? -1 : b.to === "/admin" ? 1 : a.label.localeCompare(b.label)));
   // Staff with view-only access to the current module: the page renders, nothing submits.
   const mod = moduleForPath(loc.pathname);
   const viewOnly = isStaff && !!mod && can(mod.key) && !can(mod.key, "edit");
@@ -41,6 +62,16 @@ export default function AdminLayout() {
   const [open, setOpen] = useState(false);
   const [notifs, setNotifs] = useState<Notif[]>([]);
   const [bellOpen, setBellOpen] = useState(false);
+  const [counts, setCounts] = useState<MenuCounts>({});
+
+  // Action counts beside menu items (#131): reload on every page change; opening Class Updates marks posts seen.
+  useEffect(() => {
+    if (configMissing || !profile) return;
+    if (loc.pathname.startsWith("/admin/updates")) markClassUpdatesSeen();
+    let live = true;
+    loadMenuCounts((m) => can(m)).then((c) => { if (live) setCounts(c); });
+    return () => { live = false; };
+  }, [profile?.id, loc.pathname]);
 
   useEffect(() => {
     if (configMissing || !profile) return;
@@ -141,7 +172,10 @@ export default function AdminLayout() {
                 `block rounded-lg px-3 py-2 text-sm transition ${
                   isActive ? "bg-emerald-brand font-semibold text-white" : "text-white/80 hover:bg-white/10"
                 }`}>
-              {n.label}
+              <span className="flex items-center justify-between gap-2">
+                <span>{n.label}</span>
+                <MenuBadge values={counts[n.to]} to={n.to} />
+              </span>
             </NavLink>
           ))}
         </nav>
