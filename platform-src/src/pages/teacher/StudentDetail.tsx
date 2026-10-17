@@ -76,7 +76,7 @@ export default function StudentDetail() {
       </section>
       <div className="mt-3 flex gap-2">
         <Link to={`/teacher/update?student=${r.enrollment_id}`} className="flex-1 rounded-lg bg-navy py-2 text-center text-sm font-semibold text-white">Post an update</Link>
-        <Link to={`/teacher/progress?student=${r.enrollment_id}`} className="flex-1 rounded-lg border border-navy py-2 text-center text-sm font-semibold text-navy">Add progress</Link>
+        <Link to={`/teacher/progress?student=${r.enrollment_id}`} className="flex-1 rounded-lg border border-navy py-2 text-center text-sm font-semibold text-navy">Red Comet photos</Link>
       </div>
     </div>
   );

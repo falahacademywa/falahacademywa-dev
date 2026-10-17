@@ -1,4 +1,4 @@
-// Teacher app — post a class update (whole grade or one student), with an
+// Teacher app — weekly class update (whole grade or one student), with an
 // optional photo and homework due date. Same fields as the Google Form; the
 // insert fires the existing admin alert and the parents' evening digest.
 import { useEffect, useState } from "react";
@@ -66,7 +66,8 @@ export default function Update() {
 
   return (
     <div>
-      <h1 className="mb-3 font-display text-xl font-semibold text-navy">Class update</h1>
+      <h1 className="mb-1 font-display text-xl font-semibold text-navy">Weekly class update</h1>
+      <p className="mb-3 text-xs text-gray-500">Tell parents what the class covered this week, one post per subject. Posted {usDate(todayISO())}.</p>
       <form onSubmit={submit} className="space-y-3 rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
         <label className="block text-xs font-semibold text-gray-500">For
           <select value={target} onChange={(e) => setTarget(e.target.value)} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">
@@ -79,8 +80,8 @@ export default function Update() {
             {SUBJECTS.map((s) => <button type="button" key={s} onClick={() => setSubject(s)} className={`rounded-full px-3 py-1 text-xs font-semibold ${subject === s ? "bg-navy text-white" : "border border-gray-300 bg-white text-gray-600"}`}>{s}</button>)}
           </div>
         </label>
-        <label className="block text-xs font-semibold text-gray-500">What did the class do today?
-          <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={4} placeholder="e.g. We practised letters A–E and read a story about kindness. Homework: trace page 7." className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+        <label className="block text-xs font-semibold text-gray-500">What did the class do this week?
+          <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={5} placeholder="e.g. This week we practised letters A–E, counted to 20 and read a story about kindness. Please revise the letter sounds at home." className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" />
         </label>
         <div className="grid grid-cols-2 gap-2">
           <label className="block text-xs font-semibold text-gray-500">Homework due (optional)
