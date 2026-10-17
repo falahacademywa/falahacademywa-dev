@@ -15,6 +15,7 @@ export interface RosterRow {
 }
 export interface Contact { student_id: string; kind: "guardian" | "emergency"; name: string; relationship: string | null; phone: string | null; sort_order: number; is_primary: boolean }
 export interface MyTeacher { id: string; first_name: string; last_name: string; email: string | null; phone: string | null; qualification: string | null; photo_url: string | null; bio: string | null;
+  address: string | null; emergency_name: string | null; emergency_phone: string | null;
   teacher_grades: { id: number; role: string; grade_id: number; grades: { name: string } }[] }
 
 export const SUBJECTS = ["English", "Mathematics", "Science", "Islamic Education", "Qur'an", "Arabic", "Art", "PE", "General"];
@@ -42,7 +43,7 @@ export function useMyTeacher() {
   async function load() {
     if (configMissing) return;
     const { data } = await supabase.from("teachers")
-      .select("id, first_name, last_name, email, phone, qualification, photo_url, bio, teacher_grades ( id, role, grade_id, grades ( name ) )")
+      .select("id, first_name, last_name, email, phone, qualification, photo_url, bio, address, emergency_name, emergency_phone, teacher_grades ( id, role, grade_id, grades ( name ) )")
       .limit(1).maybeSingle();
     setMe((data as unknown as MyTeacher) ?? null);
   }

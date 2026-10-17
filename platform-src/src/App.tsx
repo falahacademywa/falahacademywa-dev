@@ -27,7 +27,6 @@ import Attendance from "./pages/admin/Attendance";
 import ParentHome from "./pages/parent/ParentHome";
 import TeacherLayout from "./layouts/TeacherLayout";
 import TeacherToday from "./pages/teacher/Today";
-import TeacherStudents from "./pages/teacher/Students";
 import TeacherStudent from "./pages/teacher/StudentDetail";
 import TeacherUpdate from "./pages/teacher/Update";
 import TeacherProgress from "./pages/teacher/Progress";
@@ -71,7 +70,6 @@ export default function App() {
           {/* Teacher app (phase 26): mobile-first, installable */}
           <Route path="/teacher" element={<RequireRole roles={["teacher"]}><TeacherLayout /></RequireRole>}>
             <Route index element={<TeacherToday />} />
-            <Route path="students" element={<TeacherStudents />} />
             <Route path="students/:id" element={<TeacherStudent />} />
             <Route path="update" element={<TeacherUpdate />} />
             <Route path="progress" element={<TeacherProgress />} />

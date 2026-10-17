@@ -37,7 +37,7 @@ export default function StudentDetail() {
   );
   return (
     <div>
-      <Link to="/teacher/students" className="text-sm text-royal">‹ Students</Link>
+      <Link to="/teacher" className="text-sm text-royal">‹ Attendance</Link>
       <div className="mt-2 flex items-center gap-3">
         {r.profile_photo_url ? <img src={r.profile_photo_url} alt="" className="h-16 w-16 rounded-full object-cover" />
           : <div className="flex h-16 w-16 items-center justify-center rounded-full bg-navy/10 text-lg font-bold text-navy">{r.first_name[0]}{r.last_name[0]}</div>}
@@ -74,9 +74,8 @@ export default function StudentDetail() {
           {!recent.length && <span className="text-sm text-gray-400">No attendance yet.</span>}
         </div>
       </section>
-      <div className="mt-3 flex gap-2">
-        <Link to={`/teacher/update?student=${r.enrollment_id}`} className="flex-1 rounded-lg bg-navy py-2 text-center text-sm font-semibold text-white">Post an update</Link>
-        <Link to={`/teacher/progress?student=${r.enrollment_id}`} className="flex-1 rounded-lg border border-navy py-2 text-center text-sm font-semibold text-navy">Red Comet photos</Link>
+      <div className="mt-3">
+        <Link to={`/teacher/update?student=${r.enrollment_id}`} className="block rounded-lg bg-navy py-2 text-center text-sm font-semibold text-white">Post an update for {r.first_name}</Link>
       </div>
     </div>
   );

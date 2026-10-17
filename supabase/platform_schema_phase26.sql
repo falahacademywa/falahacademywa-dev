@@ -325,6 +325,23 @@ create policy class_updates_photo_delete on storage.objects for delete to authen
 -- one so the Google-Form posts and older readers keep working)
 alter table public.class_updates add column if not exists attachment_urls text[] not null default '{}';
 
+-- teacher profile from the app (President 2026-10-17): photo, address, emergency contact
+alter table public.teachers add column if not exists address text;
+alter table public.teachers add column if not exists emergency_name text;
+alter table public.teachers add column if not exists emergency_phone text;
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('teacher-photos', 'teacher-photos', true, 2097152, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do update set public = true, file_size_limit = 2097152,
+  allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp'];
+drop policy if exists teacher_photos_write on storage.objects;
+create policy teacher_photos_write on storage.objects for insert to authenticated
+  with check (bucket_id = 'teacher-photos' and (public.is_admin() or public.is_teacher()));
+drop policy if exists teacher_photos_read on storage.objects;
+create policy teacher_photos_read on storage.objects for select using (bucket_id = 'teacher-photos');
+drop policy if exists teacher_photos_delete on storage.objects;
+create policy teacher_photos_delete on storage.objects for delete to authenticated
+  using (bucket_id = 'teacher-photos' and (public.is_admin() or owner = auth.uid()));
+
 -- ---------- 6. notifications for teachers ----------
 -- teachers can read their own notifications (same table, policies already use recipient_id = auth.uid())
 -- audit on the new table

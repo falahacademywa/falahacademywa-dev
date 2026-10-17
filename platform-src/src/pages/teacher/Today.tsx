@@ -1,6 +1,7 @@
 // Teacher app — Today: mark attendance for my class(es). One tap per child,
 // saved immediately (upsert on enrollment + date). Replaces the Google Sheet.
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import { useRoster, todayISO, medicalFlag, type RosterRow } from "../../lib/teacher";
 import { usDate } from "../../lib/format";
@@ -79,12 +80,14 @@ export default function Today() {
       <div className="space-y-2">
         {rows.map((r) => (
           <div key={r.enrollment_id} className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
-            {r.profile_photo_url ? <img src={r.profile_photo_url} alt="" className="h-10 w-10 rounded-full object-cover" />
-              : <div className="flex h-10 w-10 items-center justify-center rounded-full bg-navy/10 text-sm font-bold text-navy">{r.first_name[0]}{r.last_name[0]}</div>}
-            <div className="min-w-0 flex-1">
-              <div className="truncate font-semibold text-navy">{r.first_name} {r.last_name}</div>
-              <div className="text-[11px] text-gray-400">{r.grade_name}{medicalFlag(r) ? " · ⚕ medical note" : ""}</div>
-            </div>
+            <Link to={`/teacher/students/${r.student_id}`}>
+              {r.profile_photo_url ? <img src={r.profile_photo_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+                : <div className="flex h-10 w-10 items-center justify-center rounded-full bg-navy/10 text-sm font-bold text-navy">{r.first_name[0]}{r.last_name[0]}</div>}
+            </Link>
+            <Link to={`/teacher/students/${r.student_id}`} className="min-w-0 flex-1 active:opacity-70">
+              <div className="truncate font-semibold text-navy underline decoration-gray-300 underline-offset-2">{r.first_name} {r.last_name}</div>
+              <div className="text-[11px] text-gray-400">{r.grade_name}{medicalFlag(r) ? " · ⚕ medical note" : ""} · tap for profile</div>
+            </Link>
             <div className="flex gap-1">
               {(["present", "late", "absent"] as Status[]).map((s) => (
                 <button key={s} onClick={() => mark(r, s)} disabled={saving === r.enrollment_id}
