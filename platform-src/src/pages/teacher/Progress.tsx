@@ -1,7 +1,8 @@
 // Teacher app — Red Comet Progress: photograph a student's Red Comet workbook
-// pages (several at once) and send them to the review queue. The images go to
-// the private `student-work` bucket; one `work_uploads` row per image waits
-// for the AI step that drafts the Buzz entry for the teacher to confirm.
+// pages (several at once). The images go to the private `student-work` bucket
+// with one `work_uploads` row each; scripts/redcomet-pull.py (hourly on the
+// President's PC) copies them into the student's OneDrive inbox folder, where
+// the Buzz transcription agent works from, and moves the status along.
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
@@ -11,7 +12,7 @@ import { usDate } from "../../lib/format";
 
 interface Picked { file: File; url: string }
 interface Upload { id: number; taken_at: string; note: string | null; status: string; path: string; created_at: string }
-const STATUS: Record<string, string> = { new: "waiting", drafted: "draft ready", confirmed: "entered in Buzz", rejected: "not used" };
+const STATUS: Record<string, string> = { new: "sent", drafted: "received by office", confirmed: "entered in Red Comet", rejected: "not used" };
 
 export default function Progress() {
   const { roster } = useRoster();
@@ -70,7 +71,7 @@ export default function Progress() {
     }
     picked.forEach((p) => URL.revokeObjectURL(p.url));
     setPicked([]); setNote(""); setBusy(null);
-    setMsg(`${done} photo${done === 1 ? "" : "s"} sent for ${student?.first_name ?? "the student"}. They will be entered in Red Comet and shown here as done.`);
+    setMsg(`${done} photo${done === 1 ? "" : "s"} sent for ${student?.first_name ?? "the student"}. The office enters them in Red Comet; the status below changes as that happens.`);
     loadRecent();
   }
 
