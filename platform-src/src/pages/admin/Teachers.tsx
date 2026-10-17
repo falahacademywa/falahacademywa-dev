@@ -62,12 +62,12 @@ export default function Teachers() {
     await supabase.from("teachers").update({ active: !t.active }).eq("id", t.id);
     load();
   }
-  // Teacher app (phase 23): grant or revoke sign-in with the teacher's own Google/Microsoft account
+  // Teacher app (phase 26): grant or revoke sign-in with the teacher's own Google/Microsoft account
   async function toggleApp(t: TeacherRow) {
     setMsg(null);
     if (t.app_access && !confirm(`Revoke app access for ${t.first_name}? Their phone stops working on the next request.`)) return;
     const { data, error } = await supabase.rpc("set_teacher_app_access", { p_teacher: t.id, p_on: !t.app_access });
-    if (error) return setMsg("Could not change app access: " + error.message + (error.message.includes("set_teacher_app_access") ? " — run platform_schema_phase23.sql" : ""));
+    if (error) return setMsg("Could not change app access: " + error.message + (error.message.includes("set_teacher_app_access") ? " — run platform_schema_phase26.sql" : ""));
     const r = data as { app_access: boolean; linked?: boolean };
     setMsg(r.app_access
       ? `App access on. ${t.first_name} signs in at the portal with "Continue with Google" or "Continue with Microsoft" using ${t.email}${r.linked ? " (an existing login with that e-mail is now linked)" : ""}.`

@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (r.error) r = await supabase.from("profiles").select("id, full_name, role, must_change_password").eq("id", uid).single();
     const p = (r.data as Profile) ?? null;
     setProfile(p);
-    // teacher app (phase 23): stamp the last sign-in for Admin → Teachers
+    // teacher app (phase 26): stamp the last sign-in for Admin → Teachers
     if (p?.role === "teacher") supabase.rpc("teacher_touch_sign_in").then(() => {});
     if (p?.role === "staff") {
       const { data } = await supabase.from("staff_permissions").select("module, level").eq("user_id", uid);

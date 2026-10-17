@@ -34,7 +34,7 @@ export default function Login() {
     else setInfo("Password reset email sent — check your inbox (and spam).");
   }
 
-  // Teacher app (phase 23): sign in with the teacher's own Google or Microsoft
+  // Teacher app (phase 26): sign in with the teacher's own Google or Microsoft
   // account. Works only when Admin → Teachers has switched App access on for
   // a teacher record with that e-mail; anyone else lands on a "no access" page.
   async function oauth(provider: "google" | "azure") {

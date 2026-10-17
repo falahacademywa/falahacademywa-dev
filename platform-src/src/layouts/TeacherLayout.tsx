@@ -1,4 +1,4 @@
-// Teacher app shell (phase 23): phone-width column, top bar, bottom tabs.
+// Teacher app shell (phase 26): phone-width column, top bar, bottom tabs.
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 

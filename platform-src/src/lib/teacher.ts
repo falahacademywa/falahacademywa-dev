@@ -1,4 +1,4 @@
-// Teacher app (phase 23): shared types, roster hook and small helpers.
+// Teacher app (phase 26): shared types, roster hook and small helpers.
 // Everything here reads the limited views the database exposes to teachers
 // (teacher_students, teacher_student_contacts); nothing reaches the base
 // tables' hidden columns.
@@ -27,7 +27,7 @@ export function useRoster() {
     if (configMissing) return;
     setLoading(true);
     const { data, error } = await supabase.from("teacher_students").select("*").order("grade_id").order("first_name");
-    if (error) setError(error.message.includes("teacher_students") ? "The teacher app is not set up on this project yet (phase 23)." : error.message);
+    if (error) setError(error.message.includes("teacher_students") ? "The teacher app is not set up on this project yet (phase 26)." : error.message);
     setRoster((data as RosterRow[]) ?? []);
     setLoading(false);
   }
