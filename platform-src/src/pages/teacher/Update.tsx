@@ -62,7 +62,7 @@ export default function Update() {
   const [gradeId, setGradeId] = useState<number | "">("");
   const [studentEnr, setStudentEnr] = useState<string>("");          // "" = whole class
   const [boxes, setBoxes] = useState<Record<string, Box>>(Object.fromEntries(CLASS_SUBJECTS.map((s) => [s, emptyBox()])));
-  const [quran, setQuran] = useState<Box & { enr: string }>({ ...emptyBox(), enr: "" });
+  const [quran, setQuran] = useState<Box & { enrs: string[] }>({ ...emptyBox(), enrs: [] });   // several students, one row each
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
@@ -71,11 +71,15 @@ export default function Update() {
     if (gradeId !== "" || !grades.length) return;
     const pre = presetEnr ? roster.find((r) => r.enrollment_id === presetEnr) : undefined;
     setGradeId(pre?.grade_id ?? grades[0].id);
-    if (pre) { setStudentEnr(pre.enrollment_id); setQuran((q) => ({ ...q, enr: pre.enrollment_id })); }
+    if (pre) { setStudentEnr(pre.enrollment_id); setQuran((q) => ({ ...q, enrs: [pre.enrollment_id] })); }
   }, [grades, roster]);
 
   const students = useMemo(() => roster.filter((r) => r.grade_id === gradeId), [roster, gradeId]);
-  useEffect(() => { if (studentEnr && !students.some((s) => s.enrollment_id === studentEnr)) setStudentEnr(""); }, [students]);
+  useEffect(() => {
+    if (studentEnr && !students.some((s) => s.enrollment_id === studentEnr)) setStudentEnr("");
+    setQuran((q) => ({ ...q, enrs: q.enrs.filter((e) => students.some((s) => s.enrollment_id === e)) }));
+  }, [students]);
+  const toggleQuran = (e: string) => setQuran((q) => ({ ...q, enrs: q.enrs.includes(e) ? q.enrs.filter((x) => x !== e) : [...q.enrs, e] }));
 
   async function loadPosts() {
     const { data } = await supabase.from("class_updates").select("id, subject, note, update_date, homework_due, attachment_urls, grade_id, enrollment_id, created_at")
@@ -97,8 +101,8 @@ export default function Update() {
     }
     return urls;
   }
-  async function postOne(subject: string, box: Box, target: { grade_id: number | null; enrollment_id: string | null }) {
-    const urls = await uploadAll(box.photos);
+  async function postOne(subject: string, box: Box, target: { grade_id: number | null; enrollment_id: string | null }, ready?: string[]) {
+    const urls = ready ?? await uploadAll(box.photos);
     const row = { ...target, subject, note: box.note.trim(), homework_due: box.due || null, update_date: todayISO(),
       attachment_url: urls[0] ?? null, attachment_thumb: urls[0] ?? null, attachment_urls: urls };
     const { error } = await supabase.from("class_updates").insert(row);
@@ -107,7 +111,7 @@ export default function Update() {
       await supabase.from("assignments").insert({ ...target, subject, title: box.note.trim().slice(0, 80), instructions: box.note.trim(),
         due_date: box.due, created_by: session?.user.id ?? null });
     }
-    box.photos.forEach((p) => URL.revokeObjectURL(p.url));
+    if (!ready) box.photos.forEach((p) => URL.revokeObjectURL(p.url));
   }
 
   async function submit(e: React.FormEvent) {
@@ -116,14 +120,19 @@ export default function Update() {
     const filled = CLASS_SUBJECTS.filter((s) => boxes[s].note.trim().length >= 3);
     const quranFilled = quran.note.trim().length >= 3;
     if (!filled.length && !quranFilled) return setMsg({ ok: false, text: "Write at least one update." });
-    if (quranFilled && !quran.enr) return setMsg({ ok: false, text: "Choose the student for the Qur'an update." });
+    if (quranFilled && !quran.enrs.length) return setMsg({ ok: false, text: "Tick at least one student for the Qur'an update." });
     const target = studentEnr ? { grade_id: null, enrollment_id: studentEnr } : { grade_id: gradeId, enrollment_id: null };
     let done = 0;
     try {
       for (const s of filled) { setBusy(`Posting ${s}…`); await postOne(s, boxes[s], target); done++; }
-      if (quranFilled) { setBusy("Posting Qur'an…"); await postOne("Qur'an", quran, { grade_id: null, enrollment_id: quran.enr }); done++; }
+      if (quranFilled) {
+        setBusy("Posting Qur'an…");
+        const urls = await uploadAll(quran.photos);            // upload once, reuse for every student
+        for (const enr of quran.enrs) { await postOne("Qur'an", quran, { grade_id: null, enrollment_id: enr }, urls); done++; }
+        quran.photos.forEach((p) => URL.revokeObjectURL(p.url));
+      }
       setBoxes(Object.fromEntries(CLASS_SUBJECTS.map((s) => [s, emptyBox()])));
-      setQuran((q) => ({ ...emptyBox(), enr: q.enr }));
+      setQuran({ ...emptyBox(), enrs: [] });
       setMsg({ ok: true, text: `${done} update${done === 1 ? "" : "s"} posted. Parents see them in their feed; the office has been notified.` });
     } catch (err) {
       setMsg({ ok: false, text: `${(err as Error).message}${done ? ` (${done} posted before the error)` : ""}` });
@@ -161,11 +170,20 @@ export default function Update() {
         {CLASS_SUBJECTS.map((s) => <SubjectBox key={s} title={s} box={boxes[s]} onChange={(patch) => setBox(s, patch)} />)}
 
         <div className="rounded-xl border border-emerald-brand/40 bg-emerald-50/40 p-3 shadow-sm">
-          <div className="mb-2 text-sm font-semibold text-emerald-deep">Qur'an update · one student</div>
-          <select value={quran.enr} onChange={(e) => setQuran({ ...quran, enr: e.target.value })} className={inp}>
-            <option value="">Choose student…</option>
-            {students.map((r) => <option key={r.enrollment_id} value={r.enrollment_id}>{r.first_name} {r.last_name}</option>)}
-          </select>
+          <div className="mb-2 text-sm font-semibold text-emerald-deep">Qur'an update · by student</div>
+          <div className="flex flex-wrap gap-1.5">
+            {students.map((r) => { const on = quran.enrs.includes(r.enrollment_id); return (
+              <button type="button" key={r.enrollment_id} onClick={() => toggleQuran(r.enrollment_id)} aria-pressed={on}
+                className={`rounded-full px-3 py-1 text-xs font-semibold ${on ? "bg-emerald-brand text-white" : "border border-gray-300 bg-white text-gray-600"}`}>
+                {on ? "✓ " : ""}{r.first_name}
+              </button>
+            ); })}
+            {students.length > 1 && (
+              <button type="button" onClick={() => setQuran((q) => ({ ...q, enrs: q.enrs.length === students.length ? [] : students.map((s) => s.enrollment_id) }))}
+                className="rounded-full px-3 py-1 text-xs font-semibold text-emerald-deep underline">{quran.enrs.length === students.length ? "None" : "All"}</button>
+            )}
+          </div>
+          <div className="mt-1 text-[11px] text-gray-500">{quran.enrs.length ? `${quran.enrs.length} student${quran.enrs.length === 1 ? "" : "s"} selected — each gets the same post` : "Tap the students this Qur'an update is for"}</div>
           <div className="mt-2">
             <SubjectBox title="Qur'an" box={quran} onChange={(patch) => setQuran({ ...quran, ...patch })} accent="border-emerald-brand/30" />
           </div>
