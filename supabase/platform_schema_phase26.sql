@@ -73,6 +73,7 @@ begin
           case when t_id is not null then 'teacher' else 'parent' end)
   on conflict (id) do update set email = excluded.email;
   if t_id is not null then
+    perform set_config('falah.system', 'on', true);   -- let teachers_protect accept the link
     update public.teachers set user_id = new.id, app_last_sign_in = now() where id = t_id;
   end if;
   return new;
@@ -87,6 +88,7 @@ begin
   if not public.can_edit('teachers') then raise exception 'teachers permission required'; end if;
   select * into t from public.teachers where id = p_teacher;
   if t is null then raise exception 'teacher not found'; end if;
+  perform set_config('falah.system', 'on', true);
   if p_on then
     if t.email is null then raise exception 'add the teacher''s e-mail first'; end if;
     -- an existing login with that e-mail?
@@ -109,10 +111,26 @@ grant execute on function public.set_teacher_app_access(uuid, boolean) to authen
 
 -- stamp the last sign-in (called by the app after it loads the profile)
 create or replace function public.teacher_touch_sign_in()
-returns void language sql security definer set search_path = public as $$
-  update public.teachers set app_last_sign_in = now() where user_id = auth.uid()
-$$;
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  perform set_config('falah.system', 'on', true);
+  update public.teachers set app_last_sign_in = now() where user_id = auth.uid();
+end; $$;
 grant execute on function public.teacher_touch_sign_in() to authenticated;
+
+-- Re-runnable backfill: a teacher with app access whose login already exists
+-- (signed in before this fix, or before access was granted) gets linked now.
+do $$
+begin
+  perform set_config('falah.system', 'on', true);
+  update public.teachers t
+     set user_id = p.id, app_last_sign_in = coalesce(t.app_last_sign_in, now())
+    from public.profiles p
+   where lower(p.email) = lower(t.email) and t.app_access and t.user_id is null;
+  update public.profiles p set role = 'teacher'
+    from public.teachers t
+   where t.user_id = p.id and t.app_access and t.active and p.role = 'parent';
+end $$;
 
 -- ---------- 3. what a teacher may read ----------
 -- Base tables: row access only for the teacher's grades; the LIMITED column
@@ -135,7 +153,8 @@ create policy teacher_teachers_update on public.teachers for update
 create or replace function public.teachers_protect_columns()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
-  if public.is_admin() or auth.role() = 'service_role' then return new; end if;
+  if public.is_admin() or auth.role() = 'service_role'
+     or current_setting('falah.system', true) = 'on' then return new; end if;   -- set by handle_new_user / set_teacher_app_access / teacher_touch_sign_in
   new.first_name := old.first_name; new.last_name := old.last_name; new.email := old.email;
   new.hire_date := old.hire_date; new.active := old.active; new.app_access := old.app_access;
   new.user_id := old.user_id; new.app_last_sign_in := old.app_last_sign_in;
