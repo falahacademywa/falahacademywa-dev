@@ -1,166 +1,309 @@
 -- ================================================================
--- FALAH ACADEMY PLATFORM — Phase 23: Accept → Enroll copies the family
--- President's report 2026-10-08: a student accepted through Admin → Admissions
--- showed "No parents on file yet" and "No emergency contact on file (BR-007)".
--- accept_applicant (phase 14/19) created the student, enrollment and fee plan
--- but never copied the parents or the emergency contact from the application.
---
---   1. accept_applicant now also inserts
---        guardians          father (parent_name/email/phone, sort 1)
---                           mother (details.mother / mother_phone, sort 2)
---        emergency_contacts from details.emergency_name/_relationship/_phone
---                           (website form since 2026-10-08), else parsed from
---                           the older combined "Name (Relationship) Phone" text
---        parent_students    when a portal login with the father's e-mail
---                           already exists (a sibling's parent, or an account
---                           made before Accept) it is linked at once
---   2. One-time backfill: every accepted applicant whose student still has no
---      guardians / no emergency contact gets them from the application.
--- Run in dev AND prod. Re-runnable (inserts skip rows that already exist).
+-- FALAH ACADEMY PLATFORM — Phase 23: teacher role for the teacher app
+-- President's decisions 2026-10-16 (TODO #132, docs/teacher-app-plan.md):
+--   * installable web app on the existing portal, no store apps
+--   * teachers sign in with their own Google or Microsoft account; the login
+--     only works when Admin → Teachers has switched "App access" on for a
+--     teacher record with that e-mail
+--   * teachers see a LIMITED student profile for their own grades (names,
+--     photo, grade, parents + phones, emergency contacts, allergy/medical
+--     summary, consent status — no DOB, e-mail, address, fees, documents)
+--   * teachers write attendance, class updates and progress for their own
+--     enrollments; edit their own teacher record
+--   * photos of student work go to a private bucket + a queue table
+-- Everything is additive: parent and admin policies are untouched.
+-- Run in dev AND prod. Re-runnable.
 -- ================================================================
 
--- ---------- helper: the application's emergency contact as (name, relationship, phone) ----------
-create or replace function public.applicant_emergency(d jsonb)
-returns table (name text, relationship text, phone text)
-language sql immutable as $$
-  select coalesce(nullif(trim(d->>'emergency_name'), ''), nullif(trim(m[1]), '')),
-         coalesce(nullif(trim(d->>'emergency_relationship'), ''), nullif(trim(m[2]), '')),
-         coalesce(nullif(trim(d->>'emergency_phone'), ''), nullif(trim(m[3]), ''))
-    from (select regexp_match(coalesce(d->>'emergency', ''), '^([^(]*)\(([^)]*)\)(.*)$') as m) x
-   where coalesce(nullif(trim(d->>'emergency_name'), ''), nullif(trim(m[1]), '')) is not null
-     and coalesce(nullif(trim(d->>'emergency_phone'), ''), nullif(trim(m[3]), '')) is not null;
+-- ---------- 1. role + teacher record link ----------
+alter table public.profiles drop constraint if exists profiles_role_check;
+alter table public.profiles add constraint profiles_role_check check (role in ('admin', 'parent', 'staff', 'teacher'));
+
+alter table public.teachers add column if not exists app_access boolean not null default false;
+alter table public.teachers add column if not exists user_id uuid references public.profiles on delete set null;
+alter table public.teachers add column if not exists app_last_sign_in timestamptz;
+alter table public.teachers add column if not exists photo_url text;
+alter table public.teachers add column if not exists bio text;
+create unique index if not exists teachers_user_id_uq on public.teachers (user_id) where user_id is not null;
+
+-- is this login an active teacher with app access?
+create or replace function public.is_teacher()
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.teachers t
+                 where t.user_id = auth.uid() and t.app_access and t.active)
 $$;
 
--- ---------- helper: copy guardians + emergency contact + login link for one student ----------
-create or replace function public.copy_applicant_family(p_applicant uuid)
-returns jsonb language plpgsql security definer set search_path = public as $$
-declare
-  a   record;
-  ng  int := 0;
-  ne  int := 0;
-  nl  int := 0;
+-- does the caller teach this grade in the current school year?
+create or replace function public.teaches_grade(gid int)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.teachers t
+    join public.teacher_grades tg on tg.teacher_id = t.id
+    join public.school_years y on y.id = tg.school_year_id and y.is_current
+    where t.user_id = auth.uid() and t.app_access and t.active and tg.grade_id = gid)
+$$;
+
+create or replace function public.teaches_enrollment(eid uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.enrollments e
+                 where e.id = eid and e.status = 'active' and public.teaches_grade(e.grade_id))
+$$;
+
+-- the teacher's own e-mail, for stamping class updates / attendance
+create or replace function public.my_teacher_email()
+returns text language sql stable security definer set search_path = public as $$
+  select t.email from public.teachers t where t.user_id = auth.uid() limit 1
+$$;
+
+-- ---------- 2. sign-in: link a new login to its teacher record ----------
+-- Extends handle_new_user (phase 3). A Google/Microsoft login whose e-mail
+-- matches a teacher with app_access becomes role 'teacher' and is linked.
+-- Any other new login keeps the default role ('parent') exactly as before,
+-- which gives it nothing until the office links it.
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare t_id uuid; t_name text;
 begin
-  select * into a from public.applicants where id = p_applicant;
-  if a is null or a.student_id is null then return jsonb_build_object('skipped', true); end if;
-
-  if nullif(trim(a.parent_name), '') is not null
-     and not exists (select 1 from public.guardians where student_id = a.student_id and sort = 1) then
-    insert into public.guardians (student_id, name, relationship, phone, email, sort)
-    values (a.student_id, trim(a.parent_name), 'father', a.parent_phone, lower(trim(a.parent_email)), 1);
-    ng := ng + 1;
+  select id, first_name || ' ' || last_name into t_id, t_name
+  from public.teachers where lower(email) = lower(new.email) and app_access and active limit 1;
+  insert into public.profiles (id, full_name, email, role)
+  values (new.id,
+          coalesce(t_name, new.raw_user_meta_data ->> 'full_name', new.raw_user_meta_data ->> 'name', new.email),
+          new.email,
+          case when t_id is not null then 'teacher' else 'parent' end)
+  on conflict (id) do update set email = excluded.email;
+  if t_id is not null then
+    update public.teachers set user_id = new.id, app_last_sign_in = now() where id = t_id;
   end if;
-
-  if nullif(trim(a.details->>'mother'), '') is not null
-     and not exists (select 1 from public.guardians where student_id = a.student_id and sort = 2) then
-    insert into public.guardians (student_id, name, relationship, phone, sort)
-    values (a.student_id, trim(a.details->>'mother'), 'mother', a.details->>'mother_phone', 2);
-    ng := ng + 1;
-  end if;
-
-  if not exists (select 1 from public.emergency_contacts where student_id = a.student_id) then
-    insert into public.emergency_contacts (student_id, name, relationship, phone, is_primary)
-    select a.student_id, e.name, e.relationship, e.phone, true
-      from public.applicant_emergency(a.details) e;
-    get diagnostics ne = row_count;
-  end if;
-
-  if nullif(trim(a.parent_email), '') is not null then
-    insert into public.parent_students (parent_id, student_id, relationship, is_primary_contact)
-    select p.id, a.student_id, 'parent', true
-      from public.profiles p
-     where p.role = 'parent' and lower(p.email) = lower(trim(a.parent_email))
-    on conflict do nothing;
-    get diagnostics nl = row_count;
-  end if;
-
-  return jsonb_build_object('guardians', ng, 'emergency_contacts', ne, 'login_linked', nl);
+  return new;
 end; $$;
-revoke all on function public.copy_applicant_family(uuid) from public, anon, authenticated;
 
--- ---------- accept_applicant: phase 19 body + the family copy ----------
-create or replace function public.accept_applicant(p_applicant uuid, p_monthly_fee numeric default 300)
+-- Admin → Teachers: grant / revoke. Linking also covers a teacher who signed
+-- in BEFORE access was granted (their profile exists as 'parent').
+create or replace function public.set_teacher_app_access(p_teacher uuid, p_on boolean)
 returns jsonb language plpgsql security definer set search_path = public as $$
-declare
-  a      record;
-  sid    uuid;
-  sno    int;
-  eid    uuid;
-  fid    uuid;
-  yid    int;
-  ylabel text;
-  gid    int;
-  gname  text;
-  fam    jsonb;
+declare t record; uid uuid;
 begin
-  if not public.can_edit('admissions') then
-    raise exception 'admissions permission required';
+  if not public.can_edit('teachers') then raise exception 'teachers permission required'; end if;
+  select * into t from public.teachers where id = p_teacher;
+  if t is null then raise exception 'teacher not found'; end if;
+  if p_on then
+    if t.email is null then raise exception 'add the teacher''s e-mail first'; end if;
+    -- an existing login with that e-mail?
+    select p.id into uid from public.profiles p where lower(p.email) = lower(t.email) limit 1;
+    update public.teachers set app_access = true, user_id = coalesce(user_id, uid) where id = p_teacher;
+    if uid is not null then
+      update public.profiles set role = 'teacher', full_name = t.first_name || ' ' || t.last_name
+      where id = uid and role in ('parent', 'teacher');
+    end if;
+    return jsonb_build_object('app_access', true, 'linked', uid is not null);
+  else
+    update public.teachers set app_access = false where id = p_teacher;
+    if t.user_id is not null then
+      update public.profiles set role = 'parent' where id = t.user_id and role = 'teacher';
+    end if;
+    return jsonb_build_object('app_access', false);
   end if;
-  if p_monthly_fee is null or p_monthly_fee < 0 then
-    raise exception 'monthly fee must be 0 or more';
-  end if;
-
-  select * into a from public.applicants where id = p_applicant;
-  if a is null then raise exception 'applicant not found'; end if;
-  if a.status = 'accepted' and a.student_id is not null then
-    select student_no into sno from public.students where id = a.student_id;
-    return jsonb_build_object('student_id', a.student_id, 'student_no', sno, 'already_accepted', true);
-  end if;
-
-  yid := coalesce(a.school_year_id,
-                  (select id from public.school_years where is_current order by id desc limit 1));
-  if yid is null then raise exception 'no current school year is set'; end if;
-  select label into ylabel from public.school_years where id = yid;
-
-  select id, name into gid, gname from public.grades where id = a.applied_grade_id;
-  if gid is null and a.applied_grade_text is not null then
-    select id, name into gid, gname from public.grades
-     where is_active and lower(name) = lower(trim(a.applied_grade_text)) limit 1;
-  end if;
-  if gid is null then
-    raise exception 'Choose the recommended grade before accepting';
-  end if;
-
-  insert into public.students (first_name, last_name, date_of_birth, gender)
-  values (a.first_name, a.last_name, a.date_of_birth, a.gender)
-  returning id, student_no into sid, sno;
-
-  insert into public.enrollments (student_id, school_year_id, grade_id, school_year, grade_name,
-                                  enrollment_date, admission_date, status)
-  values (sid, yid, gid, ylabel, gname, current_date, current_date, 'active')
-  returning id into eid;
-
-  insert into public.fee_plans (enrollment_id, plan_name, total_amount, billing_frequency, start_date, status, notes)
-  values (eid,
-          case when p_monthly_fee = 0 then 'No fee' else 'Standard' end,
-          p_monthly_fee, 'monthly',
-          date_trunc('month', current_date)::date, 'active',
-          'Created by Accept → Enroll on ' || to_char(current_date, 'YYYY-MM-DD'))
-  returning id into fid;
-
-  update public.applicants
-     set status = 'accepted', student_id = sid,
-         applied_grade_id = gid, school_year_id = yid
-   where id = p_applicant;
-
-  fam := public.copy_applicant_family(p_applicant);
-
-  insert into public.audit_log (actor, action, entity, entity_id, new_value)
-  values (auth.uid(), 'accept_applicant', 'applicant', p_applicant::text,
-          jsonb_build_object('student_id', sid, 'student_no', sno, 'enrollment_id', eid,
-                             'fee_plan_id', fid, 'monthly_fee', p_monthly_fee,
-                             'grade', gname, 'school_year', ylabel, 'family', fam));
-
-  return jsonb_build_object('student_id', sid, 'student_no', sno, 'enrollment_id', eid,
-                            'fee_plan_id', fid, 'grade', gname, 'school_year', ylabel,
-                            'monthly_fee', p_monthly_fee, 'family', fam);
 end; $$;
-grant execute on function public.accept_applicant(uuid, numeric) to authenticated;
+grant execute on function public.set_teacher_app_access(uuid, boolean) to authenticated;
 
--- ---------- one-time backfill for students accepted before this phase ----------
-select s.student_no, s.first_name, public.copy_applicant_family(a.id) as copied
-  from public.applicants a
-  join public.students s on s.id = a.student_id
- where a.status = 'accepted'
-   and (not exists (select 1 from public.guardians g where g.student_id = s.id)
-        or not exists (select 1 from public.emergency_contacts e where e.student_id = s.id))
- order by s.student_no;
+-- stamp the last sign-in (called by the app after it loads the profile)
+create or replace function public.teacher_touch_sign_in()
+returns void language sql security definer set search_path = public as $$
+  update public.teachers set app_last_sign_in = now() where user_id = auth.uid()
+$$;
+grant execute on function public.teacher_touch_sign_in() to authenticated;
+
+-- ---------- 3. what a teacher may read ----------
+-- Base tables: row access only for the teacher's grades; the LIMITED column
+-- set is enforced by the views below, which are what the app queries.
+drop policy if exists teacher_students_select on public.students;
+create policy teacher_students_select on public.students for select using (
+  public.is_teacher() and exists (select 1 from public.enrollments e
+    where e.student_id = id and e.status = 'active' and public.teaches_grade(e.grade_id)));
+drop policy if exists teacher_enrollments_select on public.enrollments;
+create policy teacher_enrollments_select on public.enrollments for select using (
+  public.is_teacher() and status = 'active' and public.teaches_grade(grade_id));
+drop policy if exists teacher_grades_select on public.teacher_grades;  -- (tg_read already allows any login)
+drop policy if exists teacher_teachers_select on public.teachers;
+create policy teacher_teachers_select on public.teachers for select using (user_id = auth.uid());
+drop policy if exists teacher_teachers_update on public.teachers;
+create policy teacher_teachers_update on public.teachers for update
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- a teacher may change only phone, qualification, photo_url, bio on their own row
+create or replace function public.teachers_protect_columns()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if public.is_admin() or auth.role() = 'service_role' then return new; end if;
+  new.first_name := old.first_name; new.last_name := old.last_name; new.email := old.email;
+  new.hire_date := old.hire_date; new.active := old.active; new.app_access := old.app_access;
+  new.user_id := old.user_id; new.app_last_sign_in := old.app_last_sign_in;
+  return new;
+end; $$;
+drop trigger if exists teachers_protect on public.teachers;
+create trigger teachers_protect before update on public.teachers
+  for each row execute function public.teachers_protect_columns();
+
+-- Limited roster view (security definer: the view filters rows itself, and
+-- only these columns ever reach the app).
+create or replace view public.teacher_students as
+  select s.id as student_id, e.id as enrollment_id, s.student_no, s.first_name, s.last_name,
+         s.profile_photo_url, e.grade_id, g.name as grade_name,
+         coalesce(mi.has_allergies, false) as has_allergies, mi.allergies,
+         nullif(btrim(coalesce(mi.medical_conditions, '')), '') as medical_conditions,
+         nullif(btrim(coalesce(mi.medications, '')), '') as medications,
+         nullif(btrim(coalesce(mi.emergency_medication, '')), '') as emergency_medication,
+         mi.dietary_restrictions, mi.physician_name, mi.physician_phone,
+         (mi.allergy_signed_date is not null) as allergy_form_done,
+         (mi.medical_signed_date is not null) as medical_form_done,
+         case when mc.student_id is null or mc.signed_date is null then 'not_on_file'
+              when coalesce(mc.website_print, false) and coalesce(mc.social_media, false) and coalesce(mc.external_media, false) then 'public'
+              when coalesce(mc.internal_use, false) or coalesce(mc.parent_comms, false) or coalesce(mc.website_print, false)
+                   or coalesce(mc.social_media, false) or coalesce(mc.external_media, false) then 'limited'
+              else 'none' end as consent_status,
+         mc.name_preference
+  from public.students s
+  join public.enrollments e on e.student_id = s.id and e.status = 'active'
+  join public.grades g on g.id = e.grade_id
+  left join public.medical_info mi on mi.student_id = s.id
+  left join public.media_consent mc on mc.student_id = s.id
+  where not s.archived and public.teaches_grade(e.grade_id);
+grant select on public.teacher_students to authenticated;
+
+create or replace view public.teacher_student_contacts as
+  select g.student_id, 'guardian' as kind, g.name, g.relationship, g.phone, g.sort as sort_order,
+         exists (select 1 from public.parent_students ps join public.profiles p on p.id = ps.parent_id
+                 where ps.student_id = g.student_id and ps.is_primary_contact and lower(p.email) = lower(g.email)) as is_primary
+  from public.guardians g
+  join public.enrollments e on e.student_id = g.student_id and e.status = 'active'
+  where public.teaches_grade(e.grade_id)
+  union all
+  select ec.student_id, 'emergency', ec.name, ec.relationship, ec.phone, case when ec.is_primary then 0 else 1 end, ec.is_primary
+  from public.emergency_contacts ec
+  join public.enrollments e on e.student_id = ec.student_id and e.status = 'active'
+  where public.teaches_grade(e.grade_id);
+grant select on public.teacher_student_contacts to authenticated;
+
+-- ---------- 4. what a teacher may write ----------
+-- attendance: own enrollments, today or past
+drop policy if exists teacher_attendance_select on public.attendance;
+create policy teacher_attendance_select on public.attendance for select using (public.teaches_enrollment(enrollment_id));
+drop policy if exists teacher_attendance_write on public.attendance;
+create policy teacher_attendance_write on public.attendance for insert with check (public.teaches_enrollment(enrollment_id));
+drop policy if exists teacher_attendance_update on public.attendance;
+create policy teacher_attendance_update on public.attendance for update
+  using (public.teaches_enrollment(enrollment_id)) with check (public.teaches_enrollment(enrollment_id));
+grant select, insert, update on public.attendance to authenticated;
+grant usage, select on sequence public.attendance_id_seq to authenticated;
+
+-- class updates: own grade or own enrollment; teacher_email stamped from the record
+drop policy if exists teacher_cu_select on public.class_updates;
+create policy teacher_cu_select on public.class_updates for select using (
+  (grade_id is not null and public.teaches_grade(grade_id))
+  or (enrollment_id is not null and public.teaches_enrollment(enrollment_id)));
+drop policy if exists teacher_cu_insert on public.class_updates;
+create policy teacher_cu_insert on public.class_updates for insert with check (
+  public.is_teacher() and (
+    (grade_id is not null and public.teaches_grade(grade_id))
+    or (enrollment_id is not null and public.teaches_enrollment(enrollment_id))));
+drop policy if exists teacher_cu_delete on public.class_updates;
+create policy teacher_cu_delete on public.class_updates for delete using (
+  public.is_teacher() and lower(coalesce(teacher_email, '')) = lower(coalesce(public.my_teacher_email(), '-'))
+  and created_at > now() - interval '1 day');   -- undo a mistake the same day
+create or replace function public.class_updates_stamp_teacher()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if public.is_teacher() then new.teacher_email := public.my_teacher_email(); end if;
+  return new;
+end; $$;
+drop trigger if exists class_updates_stamp on public.class_updates;
+create trigger class_updates_stamp before insert on public.class_updates
+  for each row execute function public.class_updates_stamp_teacher();
+grant select, insert, delete on public.class_updates to authenticated;
+
+-- assignments (homework with a due date, created alongside a class update)
+drop policy if exists teacher_asg_select on public.assignments;
+create policy teacher_asg_select on public.assignments for select using (
+  (grade_id is not null and public.teaches_grade(grade_id))
+  or (enrollment_id is not null and public.teaches_enrollment(enrollment_id)));
+drop policy if exists teacher_asg_insert on public.assignments;
+create policy teacher_asg_insert on public.assignments for insert with check (
+  public.is_teacher() and (
+    (grade_id is not null and public.teaches_grade(grade_id))
+    or (enrollment_id is not null and public.teaches_enrollment(enrollment_id))));
+grant select, insert on public.assignments to authenticated;
+
+-- progress: own enrollments
+drop policy if exists teacher_qp_select on public.quran_progress;
+create policy teacher_qp_select on public.quran_progress for select using (public.teaches_enrollment(enrollment_id));
+drop policy if exists teacher_qp_insert on public.quran_progress;
+create policy teacher_qp_insert on public.quran_progress for insert with check (public.teaches_enrollment(enrollment_id));
+drop policy if exists teacher_ap_select on public.academic_progress;
+create policy teacher_ap_select on public.academic_progress for select using (public.teaches_enrollment(enrollment_id));
+drop policy if exists teacher_ap_insert on public.academic_progress;
+create policy teacher_ap_insert on public.academic_progress for insert with check (public.teaches_enrollment(enrollment_id));
+grant select, insert on public.quran_progress, public.academic_progress to authenticated;
+grant usage, select on sequence public.quran_progress_id_seq, public.academic_progress_id_seq to authenticated;
+
+-- reference data the app needs
+drop policy if exists teacher_grades_ref on public.grades;
+create policy teacher_grades_ref on public.grades for select using (auth.uid() is not null);
+
+-- ---------- 5. photos of student work (queue for the AI step) ----------
+create table if not exists public.work_uploads (
+  id            bigserial primary key,
+  enrollment_id uuid not null references public.enrollments on delete cascade,
+  path          text not null,                 -- student-work/<enrollment>/<yyyy-mm-dd>/<file>
+  taken_at      date not null default (now() at time zone 'America/Los_Angeles')::date,
+  subject       text,
+  note          text,
+  uploaded_by   uuid references public.profiles,
+  status        text not null default 'new' check (status in ('new', 'drafted', 'confirmed', 'rejected')),
+  draft_entry   jsonb,
+  created_at    timestamptz not null default now()
+);
+alter table public.work_uploads enable row level security;
+drop policy if exists wu_admin on public.work_uploads;
+create policy wu_admin on public.work_uploads for all using (public.is_admin()) with check (public.is_admin());
+drop policy if exists wu_teacher on public.work_uploads;
+create policy wu_teacher on public.work_uploads for all
+  using (public.teaches_enrollment(enrollment_id)) with check (public.teaches_enrollment(enrollment_id));
+grant select, insert, update, delete on public.work_uploads to authenticated;
+grant usage, select on sequence public.work_uploads_id_seq to authenticated;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('student-work', 'student-work', false, 3145728, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do update set public = false, file_size_limit = 3145728,
+  allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp'];
+drop policy if exists student_work_teacher_insert on storage.objects;
+create policy student_work_teacher_insert on storage.objects for insert to authenticated
+  with check (bucket_id = 'student-work' and (public.is_admin() or public.is_teacher()));
+drop policy if exists student_work_read on storage.objects;
+create policy student_work_read on storage.objects for select to authenticated
+  using (bucket_id = 'student-work' and (public.is_admin() or public.is_teacher()));
+drop policy if exists student_work_delete on storage.objects;
+create policy student_work_delete on storage.objects for delete to authenticated
+  using (bucket_id = 'student-work' and (public.is_admin() or owner = auth.uid()));
+
+-- class-update photos from the app (parents open attachment_url directly, as
+-- they do with the Drive links from the Google Form, so the bucket is public-read)
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('class-updates', 'class-updates', true, 3145728, array['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
+on conflict (id) do update set public = true, file_size_limit = 3145728,
+  allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+drop policy if exists class_updates_photo_insert on storage.objects;
+create policy class_updates_photo_insert on storage.objects for insert to authenticated
+  with check (bucket_id = 'class-updates' and (public.is_admin() or public.is_teacher()));
+drop policy if exists class_updates_photo_read on storage.objects;
+create policy class_updates_photo_read on storage.objects for select using (bucket_id = 'class-updates');
+drop policy if exists class_updates_photo_delete on storage.objects;
+create policy class_updates_photo_delete on storage.objects for delete to authenticated
+  using (bucket_id = 'class-updates' and (public.is_admin() or owner = auth.uid()));
+
+-- ---------- 6. notifications for teachers ----------
+-- teachers can read their own notifications (same table, policies already use recipient_id = auth.uid())
+-- audit on the new table
+drop trigger if exists work_uploads_audit_generic on public.work_uploads;
+create trigger work_uploads_audit_generic after insert or update or delete on public.work_uploads
+  for each row execute function public.row_audit_generic();
