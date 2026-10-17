@@ -301,6 +301,10 @@ drop policy if exists class_updates_photo_delete on storage.objects;
 create policy class_updates_photo_delete on storage.objects for delete to authenticated
   using (bucket_id = 'class-updates' and (public.is_admin() or owner = auth.uid()));
 
+-- several photos per update from the app (attachment_url/_thumb keep the first
+-- one so the Google-Form posts and older readers keep working)
+alter table public.class_updates add column if not exists attachment_urls text[] not null default '{}';
+
 -- ---------- 6. notifications for teachers ----------
 -- teachers can read their own notifications (same table, policies already use recipient_id = auth.uid())
 -- audit on the new table
