@@ -118,20 +118,6 @@ begin
 end; $$;
 grant execute on function public.teacher_touch_sign_in() to authenticated;
 
--- Re-runnable backfill: a teacher with app access whose login already exists
--- (signed in before this fix, or before access was granted) gets linked now.
-do $$
-begin
-  perform set_config('falah.system', 'on', true);
-  update public.teachers t
-     set user_id = p.id, app_last_sign_in = coalesce(t.app_last_sign_in, now())
-    from public.profiles p
-   where lower(p.email) = lower(t.email) and t.app_access and t.user_id is null;
-  update public.profiles p set role = 'teacher'
-    from public.teachers t
-   where t.user_id = p.id and t.app_access and t.active and p.role = 'parent';
-end $$;
-
 -- ---------- 3. what a teacher may read ----------
 -- Base tables: row access only for the teacher's grades; the LIMITED column
 -- set is enforced by the views below, which are what the app queries.
@@ -163,6 +149,21 @@ end; $$;
 drop trigger if exists teachers_protect on public.teachers;
 create trigger teachers_protect before update on public.teachers
   for each row execute function public.teachers_protect_columns();
+
+-- Re-runnable backfill: a teacher with app access whose login already exists
+-- (signed in before this fix, or before access was granted) gets linked now.
+do $$
+begin
+  perform set_config('falah.system', 'on', true);
+  update public.teachers t
+     set user_id = p.id, app_last_sign_in = coalesce(t.app_last_sign_in, now())
+    from public.profiles p
+   where lower(p.email) = lower(t.email) and t.app_access and t.user_id is null;
+  update public.profiles p set role = 'teacher'
+    from public.teachers t
+   where t.user_id = p.id and t.app_access and t.active and p.role = 'parent';
+end $$;
+
 
 -- Limited roster view (security definer: the view filters rows itself, and
 -- only these columns ever reach the app).
