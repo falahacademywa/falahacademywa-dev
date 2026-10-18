@@ -84,7 +84,7 @@ export default function Teachers() {
           {showForm ? "Cancel" : "+ Add Teacher"}
         </button>
       </div>
-      {msg && <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{msg}</div>}
+      {msg && <div className={`mb-4 rounded-lg p-3 text-sm ${/^App access/.test(msg) ? "bg-green-50 text-green-800" : "bg-red-50 text-red-700"}`}>{msg}</div>}
       {configMissing && <p className="text-sm text-gray-500">Connect the database to manage teachers.</p>}
 
       {showForm && (

@@ -42,9 +42,12 @@ export function useMyTeacher() {
   const [me, setMe] = useState<MyTeacher | null>(null);
   async function load() {
     if (configMissing) return;
+    const uid = (await supabase.auth.getUser()).data.user?.id;
+    if (!uid) return;
+    // teachers rows are readable by every login (parents see teacher names), so filter by my link
     const { data } = await supabase.from("teachers")
       .select("id, first_name, last_name, email, phone, qualification, photo_url, bio, address, emergency_name, emergency_phone, teacher_grades ( id, role, grade_id, grades ( name ) )")
-      .limit(1).maybeSingle();
+      .eq("user_id", uid).limit(1).maybeSingle();
     setMe((data as unknown as MyTeacher) ?? null);
   }
   useEffect(() => { load(); }, []);
