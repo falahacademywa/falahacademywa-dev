@@ -109,7 +109,7 @@ export default function Update() {
     if (error) throw new Error(`${subject}: ${error.message}`);
     if (box.due) {
       await supabase.from("assignments").insert({ ...target, subject, title: box.note.trim().slice(0, 80), instructions: box.note.trim(),
-        due_date: box.due, created_by: session?.user.id ?? null });
+        due_date: box.due, assigned_date: todayISO(), created_by: session?.user.id ?? null });   // Pacific date, not the UTC default
     }
     if (!ready) box.photos.forEach((p) => URL.revokeObjectURL(p.url));
   }
