@@ -90,7 +90,7 @@ export default function ClassUpdates() {
         </div>
       </div>
       <p className="mb-4 text-sm text-gray-500">
-        Teacher notes from the Class Update and Qur'an Update forms. Each post is an event on its day; click one to jump to it below.
+        Weekly teacher notes from the teacher app (and the older Class Update / Qur'an Update forms). Each post is an event on its day; click one to jump to it below.
         Parents see the same posts in their feed with an evening digest; admins get a bell alert per post.
         {loading ? " Loading…" : ` ${visible.length} in ${monthLabel(month)}.`}
       </p>
