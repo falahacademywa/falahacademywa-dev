@@ -80,6 +80,10 @@ create table if not exists public.receipt_outbox (
   result        text
 );
 alter table public.receipt_outbox enable row level security;   -- no policies: service role only
+-- explicit grants (Supabase stops granting new public tables automatically from 2026-10-30)
+grant all on public.receipt_outbox to service_role;
+grant usage, select on sequence public.receipt_outbox_id_seq to service_role;
+grant usage, select on sequence public.receipt_seq to service_role, authenticated;
 create unique index if not exists receipt_outbox_pending_uq on public.receipt_outbox (receipt_group, kind) where sent_at is null and receipt_group is not null;
 
 -- who gets the family's e-mail: primary-contact login → any linked login → father/mother guardian e-mail
@@ -100,6 +104,7 @@ returns table (email text, name text, parent_id uuid) language sql stable securi
     limit 1)
 $$;
 revoke all on function public.family_recipient(uuid[]) from public, anon, authenticated;
+grant execute on function public.family_recipient(uuid[]) to service_role;
 
 -- everything the Action needs to render and send one receipt (one group)
 create or replace function public.receipt_data(p_group uuid)
@@ -138,6 +143,7 @@ begin
     'parent_ids', (select coalesce(jsonb_agg(distinct ps.parent_id), '[]'::jsonb) from public.parent_students ps where ps.student_id = any(kids)));
 end; $$;
 revoke all on function public.receipt_data(uuid) from public, anon, authenticated;
+grant execute on function public.receipt_data(uuid) to service_role;
 
 -- ---------- 3. triggers: queue + instant in-app notification ----------
 create or replace function public.payments_receipt_queue()
@@ -214,6 +220,7 @@ returns table (due numeric, paid numeric, lines text) language sql stable securi
     from plans
 $$;
 revoke all on function public.family_balance(uuid, date) from public, anon, authenticated;
+grant execute on function public.family_balance(uuid, date) to service_role;
 
 create or replace function public.run_daily_notifications()
 returns int language plpgsql security definer set search_path = public as $$
