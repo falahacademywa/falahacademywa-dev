@@ -148,23 +148,6 @@ export default function Dashboard() {
           </Link>
         ))}
 
-        {can("academics") && <Link to="/admin/updates" title="Open Class Updates"
-          className="col-span-2 rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-royal hover:shadow-md lg:col-span-4">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <div className="font-display text-xl font-semibold text-navy">Class updates this week</div>
-            <div className="text-xs text-gray-400">Mon {usDate(week[0])} – Sun {usDate(week[1])} · click to open</div>
-          </div>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-            {grades.map((g) => { const subs = weekSubjects?.[g.id] ?? []; const c = gradeColor(grades, g.id); return (
-              <div key={g.id} className={`rounded-lg border p-3 ${subs.length ? "border-gray-200 bg-silver/50" : "border-dashed border-gray-200"}`}>
-                <div className="flex items-center gap-2 text-sm font-bold text-navy"><span className={`h-2.5 w-2.5 rounded-full ${c.dot}`} />{g.name}</div>
-                <div className={`mt-1 text-sm ${subs.length ? "text-gray-700" : "text-gray-400"}`}>{weekSubjects == null ? "…" : subs.length ? subs.join(", ") : "no updates yet"}</div>
-              </div>
-            ); })}
-            {!grades.length && <div className="text-sm text-gray-400">{weekSubjects == null ? "Loading…" : "No active grades."}</div>}
-          </div>
-        </Link>}
-
         {can("academics") && rcPending && Object.keys(rcPending).length > 0 && (() => {
           const total = new Set(Object.values(rcPending).flatMap((e) => [...e.students])).size;
           return (
@@ -182,6 +165,23 @@ export default function Dashboard() {
             </Link>
           );
         })()}
+
+        {can("academics") && <Link to="/admin/updates" title="Open Class Updates"
+          className="col-span-2 rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-royal hover:shadow-md lg:col-span-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <div className="font-display text-xl font-semibold text-navy">Class updates this week</div>
+            <div className="text-xs text-gray-400">Mon {usDate(week[0])} – Sun {usDate(week[1])} · click to open</div>
+          </div>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {grades.map((g) => { const subs = weekSubjects?.[g.id] ?? []; const c = gradeColor(grades, g.id); return (
+              <div key={g.id} className={`rounded-lg border p-3 ${subs.length ? "border-gray-200 bg-silver/50" : "border-dashed border-gray-200"}`}>
+                <div className="flex items-center gap-2 text-sm font-bold text-navy"><span className={`h-2.5 w-2.5 rounded-full ${c.dot}`} />{g.name}</div>
+                <div className={`mt-1 text-sm ${subs.length ? "text-gray-700" : "text-gray-400"}`}>{weekSubjects == null ? "…" : subs.length ? subs.join(", ") : "no updates yet"}</div>
+              </div>
+            ); })}
+            {!grades.length && <div className="text-sm text-gray-400">{weekSubjects == null ? "Loading…" : "No active grades."}</div>}
+          </div>
+        </Link>}
 
         {can("tasks") && <Link to="/admin/tasks"
           className="col-span-2 rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-royal hover:shadow-md lg:col-span-4">
