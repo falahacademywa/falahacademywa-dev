@@ -1,7 +1,8 @@
 // Admin → Red Comet. Every workbook photo the teachers send from the teacher
 // app (Red Comet tab → `work_uploads` + private `student-work` bucket), for the
 // current calendar month and the month before. Two views: a timeline (newest
-// first) and a grouped accordion Month → Grade → Student → Subject that opens
+// first) and a grouped accordion Month → Entered or not → Grade → Student →
+// Subject that opens
 // and closes at every level. One entry per student + subject + day with the
 // photos as thumbnails; filters for month, grade, student, subject, teacher and
 // status. The status answers one question — were these pages entered in Red
@@ -137,7 +138,8 @@ export default function RedComet() {
   const shownDays = showAll ? days : days.slice(0, DAYS_OPEN);
   const hiddenDays = days.length - shownDays.length;
 
-  // grouped: Month → Grade → Student → Subject → entries (newest first)
+  // grouped: Month → Entered or not → Grade → Student → Subject → entries (newest first)
+  const ENT_ORDER: Record<Entered, number> = { pending: 0, entered: 1, rejected: 2 };
   interface Node { key: string; label: string; level: number; cards: Card[]; children: Node[] }
   const tree = useMemo(() => {
     const build = (list: Card[], level: number, parentKey: string): Node[] => {
@@ -145,8 +147,9 @@ export default function RedComet() {
       list.forEach((c) => {
         const [id, label, sort]: [string, string, string | number] =
           level === 0 ? [c.day.slice(0, 7), monthLabel(c.day.slice(0, 7)), c.day.slice(0, 7)] :
-          level === 1 ? [String(c.grade_id), gradeName(c.grade_id), gradeOrder(c.grade_id)] :
-          level === 2 ? [c.enrollment_id, c.student, c.student] : [c.subject, c.subject, c.subject];
+          level === 1 ? [c.entered, BADGE[c.entered].label, ENT_ORDER[c.entered]] :
+          level === 2 ? [String(c.grade_id), gradeName(c.grade_id), gradeOrder(c.grade_id)] :
+          level === 3 ? [c.enrollment_id, c.student, c.student] : [c.subject, c.subject, c.subject];
         const g = groups.get(id) ?? { label, sort, cards: [] };
         g.cards.push(c); groups.set(id, g);
       });
@@ -154,13 +157,13 @@ export default function RedComet() {
         .sort((a, b) => level === 0 ? (a[1].sort < b[1].sort ? 1 : -1) : a[1].sort < b[1].sort ? -1 : a[1].sort > b[1].sort ? 1 : 0)
         .map(([id, g]) => {
           const key = `${parentKey}/${id}`;
-          return { key, label: g.label, level, cards: g.cards, children: level < 3 ? build(g.cards, level + 1, key) : [] };
+          return { key, label: g.label, level, cards: g.cards, children: level < 4 ? build(g.cards, level + 1, key) : [] };
         });
     };
     return build(cards, 0, "");
   }, [cards, grades]);
-  // defaults: current month and its grades open, students and subjects closed
-  const isOpen = (n: Node) => open[n.key] ?? allState ?? (n.level === 0 ? n.key === `/${thisMonth}` : n.level === 1);
+  // defaults: current month, its status groups and grades open; students and subjects closed
+  const isOpen = (n: Node) => open[n.key] ?? allState ?? (n.level === 0 ? n.key === `/${thisMonth}` : n.level <= 2);
   const toggle = (k: string, now: boolean) => setOpen((o) => ({ ...o, [k]: !now }));
   const setAll = (v: boolean) => { setOpen({}); setAllState(v); };
 
@@ -179,25 +182,29 @@ export default function RedComet() {
   function renderNode(n: Node) {
     const o = isOpen(n);
     const pend = n.cards.filter((c) => c.entered === "pending").length;
-    const ent = n.cards.filter((c) => c.entered === "entered").length;
+    const entd = n.cards.filter((c) => c.entered === "entered").length;
     const photos = n.cards.reduce((s, c) => s + c.rows.length, 0);
-    const pad = ["", "ml-4 sm:ml-6", "ml-8 sm:ml-12", "ml-12 sm:ml-18"][n.level];
-    const head = ["text-base font-bold text-navy", "text-sm font-semibold text-navy", "text-sm font-semibold text-gray-800", "text-sm text-gray-700"][n.level];
-    const chip = n.level === 1 ? gradeColor(grades, n.cards[0].grade_id).chip : n.level === 3 ? "bg-emerald-50 text-emerald-deep border-emerald-100" : "";
-    const sub = n.level === 2 ? `${n.children.length} subject${n.children.length === 1 ? "" : "s"}` : n.level < 2 ? `${new Set(n.cards.map((c) => c.enrollment_id)).size} student${new Set(n.cards.map((c) => c.enrollment_id)).size === 1 ? "" : "s"}` : "";
+    const pad = ["", "ml-4 sm:ml-6", "ml-8 sm:ml-12", "ml-12 sm:ml-18", "ml-16 sm:ml-24"][n.level];
+    const head = ["text-base font-bold text-navy", "text-sm font-bold", "text-sm font-semibold text-navy", "text-sm font-semibold text-gray-800", "text-sm text-gray-700"][n.level];
+    const ent = n.level === 1 ? n.cards[0].entered : null;
+    const chip = ent ? BADGE[ent].cls : n.level === 2 ? gradeColor(grades, n.cards[0].grade_id).chip : n.level === 4 ? "bg-emerald-50 text-emerald-deep border-emerald-100" : "";
+    const nStudents = new Set(n.cards.map((c) => c.enrollment_id)).size;
+    const sub = n.level === 3 ? `${n.children.length} subject${n.children.length === 1 ? "" : "s"}` : n.level < 3 ? `${nStudents} student${nStudents === 1 ? "" : "s"}` : "";
     return (
       <div key={n.key} className={`${pad} ${n.level === 0 ? "mb-3" : "mt-1.5"}`}>
         <button onClick={() => toggle(n.key, o)} aria-expanded={o}
           className={`flex w-full flex-wrap items-center gap-2 rounded-lg border px-3 py-2 text-left hover:bg-silver/60 ${n.level === 0 ? "border-gray-200 bg-white shadow-sm" : "border-transparent bg-white/70"} ${pend && !o ? "border-l-4 border-l-amber-400" : ""}`}>
           <span className={`w-4 text-center text-xs text-gray-400 transition-transform ${o ? "rotate-90" : ""}`}>▶</span>
-          <span className={`${head} ${chip ? `rounded-full border px-2.5 py-0.5 text-xs font-semibold ${chip}` : ""}`}>{n.label}</span>
+          <span className={`${head} ${chip ? `inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${chip}` : ""}`}>
+            {ent && <span className={`h-2 w-2 rounded-full ${BADGE[ent].dot}`} />}{ent === "entered" ? "✓ " : ""}{n.label}
+          </span>
           <span className="text-xs text-gray-400">{sub}{sub ? " · " : ""}{n.cards.length} {n.cards.length === 1 ? "entry" : "entries"} · {photos} photo{photos === 1 ? "" : "s"}</span>
           <span className="ml-auto flex items-center gap-1.5 text-xs font-semibold">
-            {pend > 0 && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-amber-800" title="not yet in Red Comet">{pend} not yet</span>}
-            {ent > 0 && <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-deep" title="entered in Red Comet">✓ {ent}</span>}
+            {n.level !== 1 && pend > 0 && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-amber-800" title="not yet in Red Comet">{pend} not yet</span>}
+            {n.level !== 1 && entd > 0 && <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-deep" title="entered in Red Comet">✓ {entd}</span>}
           </span>
         </button>
-        {o && (n.level < 3
+        {o && (n.level < 4
           ? n.children.map(renderNode)
           : <div className="ml-6 mt-2 space-y-2 sm:ml-8">{[...n.cards].sort((a, b) => (a.day < b.day ? 1 : -1)).map((c) => card(c, true))}</div>)}
       </div>
@@ -228,7 +235,7 @@ export default function RedComet() {
       </div>
       <p className="mb-4 text-sm text-gray-500">
         Workbook pages the teachers sent from the teacher app, {monthLabel(lastMonth)} and {monthLabel(thisMonth)}.
-        {view === "timeline" ? " Newest first; each entry is one student, one subject, one day." : " Grouped by month, grade, student and subject; click a row to open or close it."}
+        {view === "timeline" ? " Newest first; each entry is one student, one subject, one day." : " Grouped by month, entered or not, grade, student and subject; click a row to open or close it."}
         {" "}The badge says whether those pages have been entered in Red Comet yet; it updates on its own as the office works through the OneDrive inbox.
         {loading ? " Loading…" : ""}
       </p>
