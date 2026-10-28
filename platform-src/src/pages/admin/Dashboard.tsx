@@ -44,13 +44,22 @@ export default function Dashboard() {
   const [week] = useState(() => weekOf(todayStr()));
   const [grades, setGrades] = useState<GradeLite[]>([]);
   const [weekSubjects, setWeekSubjects] = useState<Record<number, string[]> | null>(null);
+  // Red Comet workbook photos not yet entered (status new/drafted): students and photos per grade (#149)
+  const [rcPending, setRcPending] = useState<Record<number, { students: Set<string>; photos: number }> | null>(null);
   useEffect(() => {
     if (configMissing || !can("academics")) return;
     Promise.all([
       supabase.from("grades").select("id, name, level_order").eq("is_active", true).order("level_order"),
       supabase.from("class_updates").select("subject, grade_id, enrollments ( grade_id )").gte("update_date", week[0]).lte("update_date", week[1]),
-    ]).then(([{ data: g }, { data: u }]) => {
+      supabase.from("work_uploads").select("enrollment_id, enrollments ( grade_id )").in("status", ["new", "drafted"]),
+    ]).then(([{ data: g }, { data: u }, { data: w }]) => {
       setGrades((g as GradeLite[]) ?? []);
+      const rc: Record<number, { students: Set<string>; photos: number }> = {};
+      ((w as unknown as { enrollment_id: string; enrollments: { grade_id: number } | null }[]) ?? []).forEach((x) => {
+        const gid = x.enrollments?.grade_id; if (gid == null) return;
+        const e = (rc[gid] ??= { students: new Set(), photos: 0 }); e.students.add(x.enrollment_id); e.photos++;
+      });
+      setRcPending(rc);
       const m: Record<number, string[]> = {};
       ((u as unknown as { subject: string; grade_id: number | null; enrollments: { grade_id: number } | null }[]) ?? []).forEach((x) => {
         const gid = x.grade_id ?? x.enrollments?.grade_id; if (gid == null) return;
@@ -153,6 +162,24 @@ export default function Dashboard() {
               </div>
             ); })}
             {!grades.length && <div className="text-sm text-gray-400">{weekSubjects == null ? "Loading…" : "No active grades."}</div>}
+          </div>
+        </Link>}
+
+        {can("academics") && rcPending && Object.keys(rcPending).length > 0 && <Link to="/admin/redcomet?status=pending" title="Open Red Comet, filtered to what is not yet entered"
+          className="col-span-2 rounded-xl border border-amber-300 bg-amber-50/60 p-5 shadow-sm transition hover:border-royal hover:shadow-md lg:col-span-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <div className="font-display text-xl font-semibold text-navy">Red Comet — photos waiting to be entered</div>
+            <div className="text-xs text-gray-500">students with workbook pages not yet in Red Comet · click to open</div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {grades.filter((g) => rcPending[g.id]).map((g) => { const c = gradeColor(grades, g.id); const e = rcPending[g.id]; return (
+              <div key={g.id} className="flex items-center gap-3 rounded-lg border border-amber-200 bg-white px-4 py-2">
+                <span className={`h-2.5 w-2.5 rounded-full ${c.dot}`} />
+                <span className="text-sm font-bold text-navy">{g.name}</span>
+                <span className="font-display text-2xl font-semibold text-amber-700">{e.students.size}</span>
+                <span className="text-xs text-gray-500">{e.students.size === 1 ? "student" : "students"} · {e.photos} photo{e.photos === 1 ? "" : "s"}</span>
+              </div>
+            ); })}
           </div>
         </Link>}
 
