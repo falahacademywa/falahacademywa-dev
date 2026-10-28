@@ -165,23 +165,23 @@ export default function Dashboard() {
           </div>
         </Link>}
 
-        {can("academics") && rcPending && Object.keys(rcPending).length > 0 && <Link to="/admin/redcomet?status=pending" title="Open Red Comet, filtered to what is not yet entered"
-          className="col-span-2 rounded-xl border border-amber-300 bg-amber-50/60 p-5 shadow-sm transition hover:border-royal hover:shadow-md lg:col-span-4">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <div className="font-display text-xl font-semibold text-navy">Red Comet — photos waiting to be entered</div>
-            <div className="text-xs text-gray-500">students with workbook pages not yet in Red Comet · click to open</div>
-          </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {grades.filter((g) => rcPending[g.id]).map((g) => { const c = gradeColor(grades, g.id); const e = rcPending[g.id]; return (
-              <div key={g.id} className="flex items-center gap-3 rounded-lg border border-amber-200 bg-white px-4 py-2">
-                <span className={`h-2.5 w-2.5 rounded-full ${c.dot}`} />
-                <span className="text-sm font-bold text-navy">{g.name}</span>
-                <span className="font-display text-2xl font-semibold text-amber-700">{e.students.size}</span>
-                <span className="text-xs text-gray-500">{e.students.size === 1 ? "student" : "students"} · {e.photos} photo{e.photos === 1 ? "" : "s"}</span>
+        {can("academics") && rcPending && Object.keys(rcPending).length > 0 && (() => {
+          const total = new Set(Object.values(rcPending).flatMap((e) => [...e.students])).size;
+          return (
+            <Link to="/admin/redcomet?status=pending" title="Students with workbook photos not yet entered in Red Comet · click to open"
+              className="rounded-xl border border-amber-300 bg-amber-50/60 p-5 shadow-sm transition hover:border-royal hover:shadow-md">
+              <div className="font-display text-3xl font-semibold text-amber-700">{total}</div>
+              <div className="mt-1 text-sm text-gray-500">Red Comet: waiting</div>
+              <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+                {grades.filter((g) => rcPending[g.id]).map((g) => (
+                  <span key={g.id} className="flex items-center gap-1 font-semibold text-navy" title={`${rcPending[g.id].photos} photo${rcPending[g.id].photos === 1 ? "" : "s"}`}>
+                    <span className={`h-2 w-2 rounded-full ${gradeColor(grades, g.id).dot}`} />{g.name} <span className="text-amber-700">{rcPending[g.id].students.size}</span>
+                  </span>
+                ))}
               </div>
-            ); })}
-          </div>
-        </Link>}
+            </Link>
+          );
+        })()}
 
         {can("tasks") && <Link to="/admin/tasks"
           className="col-span-2 rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-royal hover:shadow-md lg:col-span-4">
