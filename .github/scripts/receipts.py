@@ -119,7 +119,7 @@ def render_pdf(d):
     if d.get("kind") == "corrected":
         story.append(Paragraph("This corrected receipt replaces the earlier receipt with the same number.", small))
     story += [Spacer(1, 18),
-              Paragraph("Thank you for your trust in Falah Academy. Every receipt and a yearly statement are available any time under Fees in the Family Portal.", base),
+              Paragraph("Thank you for your trust in Falah Academy.", base),
               Spacer(1, 26)]
 
     def footer(canvas, _doc):
@@ -156,7 +156,6 @@ def email(to, name, subject, html, attachment=None):
 
 def wrap(name, body):
     return (f"<p>Assalamu Alaikum {name or ''},</p>{body}"
-            f"<p>Every receipt and your yearly statement are under <a href=\"{PORTAL}\">Family Portal → Fees</a>.</p>"
             f"<p>— Falah Academy</p><p style=\"color:#777;font-size:12px\">{FOOTER}</p>")
 
 
