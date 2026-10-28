@@ -417,7 +417,9 @@ function AdminUpload({ grades, onDone }: { grades: GradeLite[]; onDone: () => vo
 
   function pick(files: FileList | null) {
     if (!files) return;
-    setPicked((p) => [...p, ...Array.from(files).filter((f) => f.type.startsWith("image/")).map((file) => ({ file, url: URL.createObjectURL(file) }))]);
+    // read the FileList now: the input is cleared right after this call, and a lazy updater would see it empty
+    const add = Array.from(files).filter((f) => f.type.startsWith("image/")).map((file) => ({ file, url: URL.createObjectURL(file) }));
+    setPicked((p) => [...p, ...add]);
     setMsg(null);
   }
   function unpick(i: number) { setPicked((p) => { URL.revokeObjectURL(p[i].url); return p.filter((_, j) => j !== i); }); }
