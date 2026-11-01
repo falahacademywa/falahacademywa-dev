@@ -47,11 +47,13 @@ create policy student_work_delete on storage.objects for delete to authenticated
     or exists (select 1 from public.enrollments e
                 where e.id::text = (storage.foldername(name))[1] and public.teaches_enrollment(e.id))));
 
--- the one existing staff login (Office Staff) gets Red Comet at edit, as decided 2026-10-31
+-- staff who could see Red Comet before (it sat under Academics) get the new module at edit,
+-- as decided 2026-10-31; a re-run never overrides a level set later on the Staff screen
 insert into public.staff_permissions (user_id, module, level)
-select p.id, 'redcomet', 'edit' from public.profiles p
- where p.role = 'staff' and lower(p.email) = 'ustazmajid96.us@gmail.com'
-on conflict (user_id, module) do update set level = 'edit';
+select sp.user_id, 'redcomet', 'edit' from public.staff_permissions sp
+  join public.profiles p on p.id = sp.user_id and p.role = 'staff'
+ where sp.module = 'academics'
+on conflict (user_id, module) do nothing;
 
 -- ---------- 2. delete guard + tombstones ----------
 create table if not exists public.work_upload_deletions (
