@@ -534,7 +534,7 @@ function Stat({ label, value, tone, onClick, active }: { label: string; value: n
 // Office upload: the admin photographs or picks workbook pages for any student in
 // any grade. Same bucket, same `work_uploads` row as the teacher app, so the
 // hourly pull and the status follow the usual path. (President 2026-10-28)
-const RC_SUBJECTS = ["English", "Maths", "Science"];
+const RC_SUBJECTS = ["English", "Maths", "Science"];   // the only Red Comet courses the school offers (no "Other", President 2026-11-01)
 interface Enr { id: string; grade_id: number; students: { first_name: string; last_name: string } }
 interface Picked { file: File; url: string }
 function AdminUpload({ grades, onDone }: { grades: GradeLite[]; onDone: () => void }) {
@@ -543,7 +543,6 @@ function AdminUpload({ grades, onDone }: { grades: GradeLite[]; onDone: () => vo
   const [gradeId, setGradeId] = useState<number | "">("");
   const [enr, setEnr] = useState("");
   const [subject, setSubject] = useState("English");
-  const [other, setOther] = useState("");
   const [day, setDay] = useState(todayISO());
   const [note, setNote] = useState("");
   const [picked, setPicked] = useState<Picked[]>([]);
@@ -557,7 +556,7 @@ function AdminUpload({ grades, onDone }: { grades: GradeLite[]; onDone: () => vo
   }, []);
   const options = enrs.filter((e) => gradeId === "" || e.grade_id === gradeId);
   const student = enrs.find((e) => e.id === enr);
-  const finalSubject = subject === "Other" ? other.trim() : subject;
+  const finalSubject = subject;
 
   function pick(files: FileList | null) {
     if (!files) return;
@@ -571,7 +570,6 @@ function AdminUpload({ grades, onDone }: { grades: GradeLite[]; onDone: () => vo
   async function upload(e: React.FormEvent) {
     e.preventDefault();
     if (!enr) return setMsg({ ok: false, text: "Choose the student first." });
-    if (!finalSubject) return setMsg({ ok: false, text: "Give the subject a name." });
     if (!picked.length) return setMsg({ ok: false, text: "Add at least one photo." });
     setMsg(null);
     let done = 0;
@@ -617,9 +615,7 @@ function AdminUpload({ grades, onDone }: { grades: GradeLite[]; onDone: () => vo
         <label className={lab}>Subject
           <select value={subject} onChange={(e) => setSubject(e.target.value)} className={inp}>
             {RC_SUBJECTS.map((s) => <option key={s}>{s}</option>)}
-            <option>Other</option>
           </select>
-          {subject === "Other" && <input value={other} onChange={(e) => setOther(e.target.value)} placeholder="Subject name" className={inp} />}
         </label>
         <label className={lab}>Date of the work
           <input type="date" value={day} max={todayISO()} onChange={(e) => setDay(e.target.value)} className={inp} />
