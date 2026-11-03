@@ -3,6 +3,7 @@
 // which time), the families that have not booked yet, every remark the class teacher and the
 // Qur'an teacher posted, and — with edit permission — the invite list: leave a child out, or
 // put two children in one meeting (siblings, even when the portal has different phones).
+// The office also controls the times (2026-11-03): open or close each time per class, add a time.
 import { useEffect, useMemo, useState } from "react";
 import { supabase, configMissing } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
@@ -10,7 +11,7 @@ import { ampm, longDate, KIND_LABEL, type Remark } from "../../lib/meetings";
 
 interface Stu { student_id: string; name: string; grade: string | null; family_no: number; invited: boolean; slot: string | null;
   parent_name: string | null; phone: string | null; booked_at: string | null; remarks: Record<string, Remark> }
-interface Cls { id: number; name: string; capacity: number; token: string | null; students: Stu[] }
+interface Cls { id: number; name: string; capacity: number; token: string | null; closed: string[]; students: Stu[] }
 interface Ev { id: number; title: string; meet_date: string; slot_minutes: number; slots: string[]; quran_minutes: number; book_until: string | null; active: boolean }
 interface View { event: Ev; events: { id: number; title: string; date: string }[]; classes: Cls[] }
 
@@ -21,6 +22,7 @@ export default function Meetings() {
   const [evId, setEvId] = useState<number | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [newTime, setNewTime] = useState("");
 
   async function load(id = evId) {
     if (configMissing) return;
@@ -61,6 +63,15 @@ export default function Meetings() {
         {ev.book_until ? ` Booking closes ${new Date(ev.book_until).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}.` : ""}
         {" "}Teachers post remarks in the teacher app (Meetings tab) after each meeting; parents read them on their portal home.
       </p>
+      {canEdit && (
+        <form onSubmit={(e) => { e.preventDefault(); if (newTime.trim()) act("ptm_admin_add_time", { p_event: ev.id, p_slot: newTime.trim() }, `${newTime.trim()} added for every class.`); setNewTime(""); }}
+          className="mb-3 flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-gray-500">Add a time to the day:</span>
+          <input value={newTime} onChange={(e) => setNewTime(e.target.value)} placeholder="e.g. 2:00 PM" className="w-28 rounded border border-gray-300 px-2 py-1" />
+          <button disabled={busy || !newTime.trim()} className="rounded border border-navy/30 bg-white px-2.5 py-1 text-xs font-semibold text-navy hover:bg-silver disabled:opacity-50">Add</button>
+          <span className="text-xs text-gray-400">Close a time for one class with its "close" button below.</span>
+        </form>
+      )}
       {msg && <p className={`mb-3 rounded-lg p-3 text-sm ${msg.ok ? "bg-emerald-50 text-emerald-deep" : "bg-red-50 text-red-700"}`}>{msg.text}</p>}
       <div className="grid gap-4 xl:grid-cols-2">
         {view.classes.map((c) => <ClassCard key={c.id} c={c} ev={ev} canEdit={canEdit} busy={busy} act={act} />)}
@@ -84,7 +95,9 @@ function ClassCard({ c, ev, canEdit, busy, act }: { c: Cls; ev: Ev; canEdit: boo
   }, [c.students]);
   const bySlot = (t: string) => fams.filter((f) => f.slot === t.slice(0, 5));
   const notBooked = fams.filter((f) => !f.slot);
-  const free = ev.slots.reduce((n, t) => n + Math.max(0, c.capacity - bySlot(t).length), 0);
+  const isClosed = (t: string) => c.closed.includes(t.slice(0, 5));
+  const free = ev.slots.filter((t) => !isClosed(t)).reduce((n, t) => n + Math.max(0, c.capacity - bySlot(t).length), 0);
+  const openTimes = ev.slots.filter((t) => !isClosed(t)).length;
   const names = (kids: Stu[]) => kids.map((k) => k.name).join(" & ");
   async function copy() { try { await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* ignore */ } }
 
@@ -94,7 +107,7 @@ function ClassCard({ c, ev, canEdit, busy, act }: { c: Cls; ev: Ev; canEdit: boo
         <h2 className="font-display text-xl font-semibold text-navy">{c.name}</h2>
         <span className="text-sm text-gray-500">
           <b className="text-navy">{fams.length - notBooked.length}</b> of {fams.length} families booked · {free} time{free === 1 ? "" : "s"} free
-          {fams.length > ev.slots.length * c.capacity && <span className="ml-1 font-semibold text-red-700">· more families than times!</span>}
+          {fams.length > openTimes * c.capacity && <span className="ml-1 font-semibold text-red-700">· more families than times!</span>}
         </span>
       </div>
       {link && (
@@ -108,12 +121,12 @@ function ClassCard({ c, ev, canEdit, busy, act }: { c: Cls; ev: Ev; canEdit: boo
       <table className="mt-3 w-full text-sm">
         <tbody>
           {ev.slots.map((t) => {
-            const fs = bySlot(t);
+            const fs = bySlot(t); const shut = isClosed(t);
             return (
-              <tr key={t} className="border-t border-gray-100 align-top">
-                <td className="w-20 py-1.5 pr-2 font-semibold text-navy">{ampm(t.slice(0, 5))}</td>
+              <tr key={t} className={`border-t border-gray-100 align-top ${shut ? "bg-gray-50" : ""}`}>
+                <td className={`w-20 py-1.5 pr-2 font-semibold ${shut ? "text-gray-400 line-through" : "text-navy"}`}>{ampm(t.slice(0, 5))}</td>
                 <td className="py-1.5">
-                  {fs.length === 0 && <span className="text-gray-300">free</span>}
+                  {fs.length === 0 && <span className="text-gray-300">{shut ? "closed — parents cannot pick it" : "free"}</span>}
                   {fs.map((f) => (
                     <div key={f.no} className="flex flex-wrap items-center gap-x-2">
                       <span className="font-semibold text-gray-800">{names(f.kids)}</span>
@@ -122,6 +135,11 @@ function ClassCard({ c, ev, canEdit, busy, act }: { c: Cls; ev: Ev; canEdit: boo
                         className="text-xs font-semibold text-red-700 hover:underline disabled:opacity-50">cancel</button>}
                     </div>
                   ))}
+                </td>
+                <td className="w-14 py-1.5 text-right">
+                  {canEdit && <button disabled={busy} onClick={() => act("ptm_admin_slot", { p_class: c.id, p_slot: t.slice(0, 5), p_open: shut },
+                      shut ? `${c.name}: ${ampm(t.slice(0, 5))} is open again.` : `${c.name}: ${ampm(t.slice(0, 5))} is closed${fs.length ? " (the booking already made there stays)" : ""}.`)}
+                    className={`text-xs font-semibold hover:underline disabled:opacity-50 ${shut ? "text-emerald-deep" : "text-gray-400"}`}>{shut ? "open" : "close"}</button>}
                 </td>
               </tr>
             );

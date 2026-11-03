@@ -8,7 +8,10 @@
 --   * Teachers see their classes' bookings in the teacher app and post remarks per student
 --     (class teacher and Qur'an teacher, one remark each) only after that meeting has ended.
 --   * Parents read the remarks on their portal home; the office sees everything.
---   * Staff permission module 'meetings' (view = see, edit = change the invite list).
+--   * Staff permission module 'meetings' (view = see, edit = change the invite list, open or
+--     close a time per class, add a time to the day, cancel a booking).
+--   * 2026-11-03 (President): 12:30 is a time again, and the office controls the times —
+--     each class has its own closed times (ptm_classes.closed_slots); parents never see those.
 --
 -- Every table is locked to admins / staff with the module; everybody else goes through the
 -- security-definer functions below, which do their own checks. Idempotent: safe to re-run.
@@ -37,6 +40,8 @@ create table if not exists public.ptm_classes (
 );
 
 -- the secret part of the link, kept apart so no parent/teacher query can ever read it
+alter table public.ptm_classes add column if not exists closed_slots time[] not null default '{}';   -- times the office closed for this class
+
 create table if not exists public.ptm_links (
   class_id int primary key references public.ptm_classes on delete cascade,
   token    text not null unique default encode(extensions.gen_random_bytes(9), 'hex')
@@ -164,7 +169,7 @@ returns jsonb language sql stable security definer set search_path = public as $
     'book_until', e.book_until,
     'slots', (select jsonb_agg(jsonb_build_object('time', public.ptm_hm(s),
                 'free', (select count(*) from public.ptm_bookings b where b.class_id = c.id and b.slot = s) < c.capacity)
-                order by s) from unnest(e.slots) s))
+                order by s) from unnest(e.slots) s where not (s = any (c.closed_slots))))
   from public.ptm_links l join public.ptm_classes c on c.id = l.class_id join public.ptm_events e on e.id = c.event_id
   where l.token = p_token
 $$;
@@ -228,7 +233,9 @@ begin
   end if;
 
   t := p_slot::time;
-  if not (t = any (e.slots)) then return jsonb_build_object('ok', false, 'error', 'That time is not offered.'); end if;
+  if not (t = any (e.slots)) or (t = any (c.closed_slots) and had is distinct from t) then
+    return jsonb_build_object('ok', false, 'error', 'That time is not offered.');
+  end if;
   perform 1 from public.ptm_classes where id = c.id for update;     -- one booking at a time per class
   if (select count(*) from public.ptm_bookings b where b.class_id = c.id and b.slot = t and b.family_no <> fam) >= c.capacity then
     return jsonb_build_object('ok', false, 'error', 'Sorry, that time was just taken. Please choose another.');
@@ -349,6 +356,7 @@ begin
     'events', (select jsonb_agg(jsonb_build_object('id', x.id, 'title', x.title, 'date', x.meet_date) order by x.meet_date desc) from public.ptm_events x),
     'classes', (select coalesce(jsonb_agg(jsonb_build_object(
         'id', c.id, 'name', c.name, 'capacity', c.capacity, 'token', l.token,
+        'closed', (select coalesce(jsonb_agg(public.ptm_hm(x)), '[]') from unnest(c.closed_slots) x),
         'students', (select coalesce(jsonb_agg(jsonb_build_object(
             'student_id', s.id, 'name', s.first_name || ' ' || s.last_name, 'grade', en.grade_name,
             'family_no', ps.family_no, 'invited', ps.invited,
@@ -392,6 +400,32 @@ begin
   return jsonb_build_object('ok', true);
 end; $$;
 
+-- open or close one time for one class (bookings already made at that time stay)
+create or replace function public.ptm_admin_slot(p_class int, p_slot text, p_open boolean)
+returns jsonb language plpgsql security definer set search_path = public as $$
+begin
+  if not public.can_edit('meetings') then raise exception 'not allowed'; end if;
+  update public.ptm_classes set closed_slots = case when p_open
+      then array_remove(closed_slots, p_slot::time)
+      else (select array_agg(distinct x order by x) from unnest(closed_slots || p_slot::time) x) end
+   where id = p_class;
+  return jsonb_build_object('ok', true);
+end; $$;
+
+-- add a start time to the day (every class gets it, open)
+create or replace function public.ptm_admin_add_time(p_event int, p_slot text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare t time;
+begin
+  if not public.can_edit('meetings') then raise exception 'not allowed'; end if;
+  begin t := p_slot::time; exception when others then
+    return jsonb_build_object('ok', false, 'error', 'Type the time as 12:30 or 2:00 PM.'); end;
+  if t < '07:00' or t > '18:00' then return jsonb_build_object('ok', false, 'error', 'That time is outside the school day.'); end if;
+  update public.ptm_events set slots = (select array_agg(distinct x order by x) from unnest(slots || t) x) where id = p_event;
+  update public.ptm_classes set closed_slots = array_remove(closed_slots, t) where event_id = p_event;
+  return jsonb_build_object('ok', true);
+end; $$;
+
 -- a child on its own again (own family number = student number)
 create or replace function public.ptm_admin_split(p_class int, p_student uuid)
 returns jsonb language plpgsql security definer set search_path = public as $$
@@ -413,17 +447,17 @@ end; $$;
 
 revoke all on function public.ptm_fill_class(int), public.ptm_teacher_view(), public.ptm_save_remark(int, uuid, text, text),
   public.ptm_parent_view(), public.ptm_admin_view(int), public.ptm_admin_set(int, uuid, boolean, uuid),
-  public.ptm_admin_split(int, uuid), public.ptm_admin_cancel(int, int), public.ptm_my_kinds(int), public.ptm_slot_end(int, time) from public;
+  public.ptm_admin_split(int, uuid), public.ptm_admin_cancel(int, int), public.ptm_admin_slot(int, text, boolean), public.ptm_admin_add_time(int, text), public.ptm_my_kinds(int), public.ptm_slot_end(int, time) from public;
 grant execute on function public.ptm_fill_class(int), public.ptm_teacher_view(), public.ptm_save_remark(int, uuid, text, text),
   public.ptm_parent_view(), public.ptm_admin_view(int), public.ptm_admin_set(int, uuid, boolean, uuid),
-  public.ptm_admin_split(int, uuid), public.ptm_admin_cancel(int, int), public.ptm_my_kinds(int), public.ptm_slot_end(int, time) to authenticated;
+  public.ptm_admin_split(int, uuid), public.ptm_admin_cancel(int, int), public.ptm_admin_slot(int, text, boolean), public.ptm_admin_add_time(int, text), public.ptm_my_kinds(int), public.ptm_slot_end(int, time) to authenticated;
 -- Supabase grants anon execute on new functions by default: take it back
 revoke execute on function public.ptm_fill_class(int), public.ptm_teacher_view(), public.ptm_save_remark(int, uuid, text, text),
   public.ptm_parent_view(), public.ptm_admin_view(int), public.ptm_admin_set(int, uuid, boolean, uuid),
-  public.ptm_admin_split(int, uuid), public.ptm_admin_cancel(int, int), public.ptm_my_kinds(int), public.ptm_slot_end(int, time) from anon;
+  public.ptm_admin_split(int, uuid), public.ptm_admin_cancel(int, int), public.ptm_admin_slot(int, text, boolean), public.ptm_admin_add_time(int, text), public.ptm_my_kinds(int), public.ptm_slot_end(int, time) from anon;
 
 -- ---------- 7. the first meeting: Wed 2026-11-18 (President 2026-11-02) ----------
--- 9:30 to 1:30 starts, no 12:30; booking open until the morning of the meeting.
+-- 9:30 to 1:30 starts (12:30 added back 2026-11-03); booking open until the morning of the meeting.
 -- Classes: Pre-K, KG, Grade 1 (the Grade 3 student is taught with Grade 1, so that link covers both).
 do $$
 declare ev int; c int; r record;
@@ -432,10 +466,13 @@ begin
   if ev is null then
     insert into public.ptm_events (title, meet_date, slots, book_until)
     values ('Parent-Teacher Meeting', '2026-11-18',
-            array['09:30','10:00','10:30','11:00','11:30','12:00','13:00','13:30']::time[],
+            array['09:30','10:00','10:30','11:00','11:30','12:00','12:30','13:00','13:30']::time[],
             ('2026-11-18 09:00')::timestamp at time zone 'America/Los_Angeles')
     returning id into ev;
   end if;
+  -- 2026-11-03: 12:30 offered again (the office can close it per class on Admin → Parent meetings)
+  update public.ptm_events set slots = (select array_agg(distinct x order by x) from unnest(slots || '12:30'::time) x)
+   where id = ev and not ('12:30'::time = any (slots));
   for r in select * from (values
       ('Pre-K',   array['Pre-K'],             1),
       ('KG',      array['KG'],                2),
