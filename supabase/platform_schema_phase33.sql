@@ -114,7 +114,8 @@ create or replace function public.ptm_fill_class(p_class int)
 returns int language plpgsql security definer set search_path = public as $$
 declare c record; changed int; n int;
 begin
-  if not (public.can_edit('meetings') or auth.uid() is null) then raise exception 'not allowed'; end if;
+  -- the office, or the SQL editor / service role (no signed-in caller); never anon or a parent
+  if not (public.can_edit('meetings') or coalesce(auth.role(), '') not in ('anon', 'authenticated')) then raise exception 'not allowed'; end if;
   select * into c from public.ptm_classes where id = p_class;
   insert into public.ptm_students (class_id, student_id, family_no)
   select p_class, e.student_id, s.student_no
@@ -416,6 +417,10 @@ revoke all on function public.ptm_fill_class(int), public.ptm_teacher_view(), pu
 grant execute on function public.ptm_fill_class(int), public.ptm_teacher_view(), public.ptm_save_remark(int, uuid, text, text),
   public.ptm_parent_view(), public.ptm_admin_view(int), public.ptm_admin_set(int, uuid, boolean, uuid),
   public.ptm_admin_split(int, uuid), public.ptm_admin_cancel(int, int), public.ptm_my_kinds(int), public.ptm_slot_end(int, time) to authenticated;
+-- Supabase grants anon execute on new functions by default: take it back
+revoke execute on function public.ptm_fill_class(int), public.ptm_teacher_view(), public.ptm_save_remark(int, uuid, text, text),
+  public.ptm_parent_view(), public.ptm_admin_view(int), public.ptm_admin_set(int, uuid, boolean, uuid),
+  public.ptm_admin_split(int, uuid), public.ptm_admin_cancel(int, int), public.ptm_my_kinds(int), public.ptm_slot_end(int, time) from anon;
 
 -- ---------- 7. the first meeting: Wed 2026-11-18 (President 2026-11-02) ----------
 -- 9:30 to 1:30 starts, no 12:30; booking open until the morning of the meeting.
