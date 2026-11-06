@@ -31,7 +31,9 @@ export default function Requests() {
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2 px-1">
-        <h1 className="flex-1 font-display text-lg font-semibold text-navy">Requests</h1>
+        <h1 className="flex-1 font-display text-lg font-semibold text-navy">
+          Requests <span title="active / total this school year" className="ml-1 rounded-full bg-white px-2 py-0.5 align-middle font-sans text-xs font-bold text-navy shadow-sm">{open.length} / {list.length}</span>
+        </h1>
         {!form && <button onClick={() => setForm({ edit: null })} className="rounded-lg bg-navy px-3 py-1.5 text-xs font-semibold text-white">+ New request</button>}
       </div>
       {form && <RequestForm edit={form.edit} onCancel={() => setForm(null)} onDone={() => { setForm(null); load(); }} />}

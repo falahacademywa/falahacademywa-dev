@@ -35,7 +35,9 @@ export default function TeacherRequests() {
   return (
     <div className="mx-auto max-w-4xl space-y-5 p-4 sm:p-6">
       <div>
-        <h1 className="font-display text-2xl font-semibold text-navy">Teacher requests</h1>
+        <h1 className="font-display text-2xl font-semibold text-navy">
+          Teacher requests <span title="active / total this school year" className="ml-1 rounded-full bg-white px-2.5 py-0.5 align-middle font-sans text-sm font-bold text-navy shadow-sm">{open.length} / {open.length + oldNow.length}</span>
+        </h1>
         <p className="mt-1 text-sm text-gray-500">Requests and topics from the teacher app. Approve to add one to your task list (code T + the request number); teachers see every status change and every note not marked internal.</p>
       </div>
       {open.length === 0 && <p className="rounded-xl bg-white p-6 text-center text-sm text-gray-500 shadow-sm">No open requests.</p>}

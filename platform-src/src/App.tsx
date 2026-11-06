@@ -1,4 +1,6 @@
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import type { ReactNode } from "react";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { AuthProvider, RequireRole, RequireAuth } from "./lib/auth";
 import Login from "./pages/Login";
 import ChangePassword from "./pages/ChangePassword";
@@ -39,11 +41,18 @@ import TeacherProgress from "./pages/teacher/Progress";
 import TeacherMe from "./pages/teacher/Me";
 import TeacherRequestsTab from "./pages/teacher/Requests";
 
+// a crash on one page shows a Reload card instead of a blank screen; a new route starts clean
+function PageGuard({ children }: { children: ReactNode }) {
+  const loc = useLocation();
+  return <ErrorBoundary resetKey={loc.pathname}>{children}</ErrorBoundary>;
+}
+
 // HashRouter so deep links work on GitHub Pages without server rewrites.
 export default function App() {
   return (
     <AuthProvider>
       <HashRouter>
+        <PageGuard>
         <Routes>
           <Route path="/login" element={<Login />} />
           {/* parent-teacher meeting booking (phase 33): public, one link per class */}
@@ -92,6 +101,7 @@ export default function App() {
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
+        </PageGuard>
       </HashRouter>
     </AuthProvider>
   );

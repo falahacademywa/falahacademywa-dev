@@ -1,6 +1,7 @@
 // One teacher request (phase 35): summary line, and when opened the details, photo, full history
 // and the actions the viewer is allowed (teacher: edit/delete own until decided, add a note;
 // admin: discuss / approve / decline / progress / resolve, notes visible or internal).
+// Phase 37: resolved and declined requests are closed: history only, no notes (admin can Reopen).
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
@@ -12,6 +13,7 @@ export default function RequestCard({ r, admin, onChanged, onEdit, startOpen = f
   const { profile, can } = useAuth();
   const isAdminRole = profile?.role === "admin";
   const canProgress = admin && can("teacher_requests", "edit");
+  const closed = r.status === "done" || r.status === "declined";
   const [open, setOpen] = useState(startOpen);
   const [img, setImg] = useState<string | null>(null);
   const [note, setNote] = useState("");
@@ -88,15 +90,19 @@ export default function RequestCard({ r, admin, onChanged, onEdit, startOpen = f
             </ol>
           </div>
 
-          {/* add a note */}
-          <div className="space-y-1.5">
+          {/* add a note: open requests only; resolved and declined ones are closed (phase 37) */}
+          {closed ? (
+            <p className="rounded-lg bg-silver/60 px-2.5 py-1.5 text-xs text-gray-500">
+              This request is closed{admin && isAdminRole ? ". Reopen it to add a note." : ", so no more notes or changes."}
+            </p>
+          ) : <div className="space-y-1.5">
             <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder={admin ? "Add a note…" : "Add a note or reply…"}
               className="w-full rounded-lg border border-gray-300 px-2.5 py-1.5 text-sm" />
             <div className="flex flex-wrap items-center gap-3">
               <button onClick={addNote} disabled={busy || !note.trim()} className={`${btn} bg-navy text-white`}>Add note</button>
               {admin && <label className="flex items-center gap-1.5 text-xs text-gray-600"><input type="checkbox" checked={internal} onChange={(e) => setInternal(e.target.checked)} /> Internal (teachers don't see it)</label>}
             </div>
-          </div>
+          </div>}
 
           {/* teacher actions */}
           {!admin && canTeacherEdit(r) && (
