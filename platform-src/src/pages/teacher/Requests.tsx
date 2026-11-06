@@ -39,8 +39,8 @@ export default function Requests() {
         <input type="checkbox" checked={mineOnly} onChange={(e) => setMineOnly(e.target.checked)} /> Only my requests
       </label>
       {open.length === 0 && <p className="rounded-xl bg-white p-6 text-center text-sm text-gray-500 shadow-sm">No open requests. Tap “+ New request” to ask for something.</p>}
-      {open.map((r) => <RequestCard key={r.id} r={r} admin={false} startOpen={r.id === focus} onChanged={load} onEdit={(x) => { setForm({ edit: x }); window.scrollTo({ top: 0 }); }} />)}
-      <GroupedArchive items={old} levels={archiveLevels(false)} noun="request" note="Resolved and declined requests of this school year."
+      {open.map((r) => <RequestCard key={`${r.id}-${r.id === focus}`} r={r} admin={false} startOpen={r.id === focus} onChanged={load} onEdit={(x) => { setForm({ edit: x }); window.scrollTo({ top: 0 }); }} />)}
+      <GroupedArchive key={`a${focus}`} focus={focus} items={old} levels={archiveLevels(false)} noun="request" note="Resolved and declined requests of this school year."
         render={(r) => <RequestCard r={r} admin={false} startOpen={r.id === focus} onChanged={load} />} />
     </div>
   );

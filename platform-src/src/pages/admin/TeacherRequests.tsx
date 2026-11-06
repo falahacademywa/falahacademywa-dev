@@ -45,13 +45,13 @@ export default function TeacherRequests() {
         return (
           <section key={s} className="space-y-2">
             <h2 className="text-xs font-bold uppercase tracking-wide text-gray-400">{HEAD[s]} ({list.length})</h2>
-            {list.map((r) => <RequestCard key={r.id} r={r} admin startOpen={r.id === focus} onChanged={load} />)}
+            {list.map((r) => <RequestCard key={`${r.id}-${r.id === focus}`} r={r} admin startOpen={r.id === focus} onChanged={load} />)}
           </section>
         );
       })}
-      <GroupedArchive items={oldNow} levels={archiveLevels(false)} noun="request" note="Resolved and declined requests of this school year."
+      <GroupedArchive key={`a${focus}`} focus={focus} items={oldNow} levels={archiveLevels(false)} noun="request" note="Resolved and declined requests of this school year."
         render={(r) => <RequestCard r={r} admin startOpen={r.id === focus} onChanged={load} />} />
-      <GroupedArchive title="Earlier school years" items={oldPast} levels={archiveLevels(true)} noun="request" note="Kept for good; teachers no longer see these."
+      <GroupedArchive key={`p${focus}`} focus={focus} title="Earlier school years" items={oldPast} levels={archiveLevels(true)} noun="request" note="Kept for good; teachers no longer see these."
         render={(r) => <RequestCard r={r} admin onChanged={load} />} />
     </div>
   );

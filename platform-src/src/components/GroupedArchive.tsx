@@ -11,10 +11,14 @@ export interface Level<T> {
 
 const desc = (a: string, b: string) => (a < b ? 1 : a > b ? -1 : 0);
 
-function Group<T extends { id: string | number }>({ items, levels, depth, render, noun, path }: {
-  items: T[]; levels: Level<T>[]; depth: number; render: (x: T) => ReactNode; noun: string; path: string;
+function Group<T extends { id: string | number }>({ items, levels, depth, render, noun, path, focus }: {
+  items: T[]; levels: Level<T>[]; depth: number; render: (x: T) => ReactNode; noun: string; path: string; focus?: string | number | null;
 }) {
-  const [open, setOpen] = useState<Record<string, boolean>>({});
+  // groups that hold the focused item (e.g. opened from a notification) start open
+  const [open, setOpen] = useState<Record<string, boolean>>(() => {
+    const f = focus != null ? items.find((x) => x.id === focus) : undefined;
+    return f && depth < levels.length ? { [levels[depth].key(f)]: true } : {};
+  });
   if (depth >= levels.length) return <div className="ml-6 mt-2 space-y-3 sm:ml-8">{items.map((x) => <div key={x.id}>{render(x)}</div>)}</div>;
   const lv = levels[depth];
   const groups = new Map<string, T[]>();
@@ -32,7 +36,7 @@ function Group<T extends { id: string | number }>({ items, levels, depth, render
               <span className="text-sm font-semibold text-navy">{lv.label ? lv.label(k) : k}</span>
               <span className="text-xs text-gray-400">{list.length} {noun}{list.length === 1 ? "" : "s"}</span>
             </button>
-            {o && <Group items={list} levels={levels} depth={depth + 1} render={render} noun={noun} path={path + k + "/"} />}
+            {o && <Group items={list} levels={levels} depth={depth + 1} render={render} noun={noun} path={path + k + "/"} focus={focus} />}
           </div>
         );
       })}
@@ -40,10 +44,12 @@ function Group<T extends { id: string | number }>({ items, levels, depth, render
   );
 }
 
-export default function GroupedArchive<T extends { id: string | number }>({ title = "Archive", items, levels, render, noun = "item", note }: {
+export default function GroupedArchive<T extends { id: string | number }>({ title = "Archive", items, levels, render, noun = "item", note, focus }: {
   title?: string; items: T[]; levels: Level<T>[]; render: (x: T) => ReactNode; noun?: string; note?: string;
+  /** id of an item to reveal: its groups start open (remount with key={focus} when it changes) */
+  focus?: string | number | null;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(() => focus != null && items.some((x) => x.id === focus));
   if (!items.length) return null;
   return (
     <div className="mt-5 border-t border-gray-100 pt-4">
@@ -56,7 +62,7 @@ export default function GroupedArchive<T extends { id: string | number }>({ titl
       {open && (
         <div className="mt-2">
           {note && <p className="mb-2 ml-4 text-xs text-gray-400 sm:ml-6">{note}</p>}
-          <Group items={items} levels={levels} depth={0} render={render} noun={noun} path="" />
+          <Group items={items} levels={levels} depth={0} render={render} noun={noun} path="" focus={focus} />
         </div>
       )}
     </div>
