@@ -39,6 +39,7 @@ export default function Meet() {
     const { data } = await supabase.rpc("ptm_family", { p_token: token, p_child: child, p_phone: phone });
     setBusy(false);
     if (!data) return setErr("We could not match that name and phone number. Please use the number the school has on file for your child, or contact the office.");
+    if ((data as { error?: string }).error) return setErr((data as { error: string }).error);   // too many tries (phase 39)
     const f = data as Family;
     setFam(f); setPick(f.slot); setParent(f.parent_name ?? "");
   }
