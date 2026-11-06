@@ -67,17 +67,30 @@ export async function drawCard(p: { card_headline: string; card_sub: string; car
   const logo = await loadImg("../images/logo.jpg");
   if (logo && p.card_style !== "amber") { x.save(); x.beginPath(); x.arc(S / 2, 200, 82, 0, Math.PI * 2); x.closePath(); x.clip(); x.drawImage(logo, S / 2 - 82, 118, 164, 164); x.restore();
     x.beginPath(); x.arc(S / 2, 200, 84, 0, Math.PI * 2); x.strokeStyle = pal.accent; x.lineWidth = 4; x.stroke(); }
-  // headline: largest size that fits in 4 lines
-  x.textAlign = "center"; x.fillStyle = pal.fg;
+  // headline + rule + sub text as one block, centred in the band between the logo and the footer;
+  // the headline takes the largest size (max 4 lines) that keeps the whole block inside the band
+  const TOP = 312, BOTTOM = 862, SUB_LH = 54;
+  x.textAlign = "center";
+  x.font = "500 40px system-ui, 'Segoe UI', sans-serif";
+  const subLines = p.card_sub ? wrap(x, p.card_sub, S - 260).slice(0, 4) : [];
+  const subH = subLines.length ? 46 + subLines.length * SUB_LH : 0;
   let size = 110, lines: string[] = [];
-  for (; size >= 44; size -= 6) { x.font = `bold ${size}px Georgia, 'Times New Roman', serif`; lines = wrap(x, p.card_headline || "Falah Academy", S - 220); if (lines.length <= 4) break; }
-  const lh = size * 1.18; let y = 470 - ((lines.length - 1) * lh) / 2;
+  for (; size >= 40; size -= 6) {
+    x.font = `bold ${size}px Georgia, 'Times New Roman', serif`;
+    lines = wrap(x, p.card_headline || "Falah Academy", S - 220);
+    if (lines.length <= 4 && lines.length * size * 1.18 + subH <= BOTTOM - TOP) break;
+  }
+  const lh = size * 1.18, blockH = lines.length * lh + subH;
+  let y = TOP + (BOTTOM - TOP - blockH) / 2 + size * 0.9;   // first baseline
+  x.fillStyle = pal.fg;
   for (const l of lines) { x.fillText(l, S / 2, y); y += lh; }
   // accent rule + sub text
-  y += 10; x.fillStyle = pal.accent; x.fillRect(S / 2 - 90, y - size * 0.55, 180, 5);
-  x.fillStyle = pal.sub; x.font = "500 40px system-ui, 'Segoe UI', sans-serif";
-  y += 40;
-  for (const l of wrap(x, p.card_sub || "", S - 260).slice(0, 4)) { x.fillText(l, S / 2, y); y += 54; }
+  if (subLines.length) {
+    y += 4 - lh + size * 0.35; x.fillStyle = pal.accent; x.fillRect(S / 2 - 90, y, 180, 5);
+    x.fillStyle = pal.sub; x.font = "500 40px system-ui, 'Segoe UI', sans-serif";
+    y += 58;
+    for (const l of subLines) { x.fillText(l, S / 2, y); y += SUB_LH; }
+  }
   // footer
   x.fillStyle = pal.fg; x.font = "600 36px system-ui, 'Segoe UI', sans-serif"; x.fillText("Falah Academy", S / 2, S - 150);
   x.fillStyle = pal.sub; x.font = "400 30px system-ui, 'Segoe UI', sans-serif"; x.fillText("falahacademywa.org · Kent, WA", S / 2, S - 105);
@@ -132,13 +145,26 @@ export async function calendarDrafts(days = 90): Promise<Draft[]> {
   const { data: hol } = await supabase.from("calendar_events").select("id, title, event_type, start_date, end_date")
     .is("grade_id", null).eq("event_type", "holiday").gte("start_date", isoOf(new Date(Date.now() - 60 * DAY)));
   const holidays = (hol as CalEvent[]) ?? [];
+  // "… Begins" holidays carry no end date: the break runs until the next "… Resumes" event
+  const { data: res } = await supabase.from("calendar_events").select("id, title, event_type, start_date, end_date")
+    .is("grade_id", null).ilike("title", "%resum%").gte("start_date", today).order("start_date");
+  const resumes = (res as CalEvent[]) ?? [];
+  const breakEnd = (h: CalEvent): string => {
+    if (h.end_date || !/begin/i.test(h.title)) return h.end_date ?? h.start_date;
+    const r = resumes.find((x) => x.start_date > h.start_date);
+    if (!r) return h.start_date;
+    let d = new Date(d0(r.start_date).getTime() - DAY);              // last Mon–Thu before resuming
+    while (d.getDay() === 0 || d.getDay() >= 5) d = new Date(d.getTime() - DAY);
+    return isoOf(d) < h.start_date ? h.start_date : isoOf(d);
+  };
+  for (const h of holidays) h.end_date = breakEnd(h);
   const out: Draft[] = [];
   for (const e of (data as CalEvent[]) ?? []) {
-    const name = e.title.replace(/\s*-\s*No School/i, "").replace(/\s*\(Subject to Moon Sighting\)/i, "").trim();
+    const name = e.title.replace(/\s*-\s*No School/i, "").replace(/\s*\(Subject to Moon Sighting\)/i, "").replace(/\s+Begins$/i, "").trim();
     const moon = isMoon(e.title);
     const base = { manual: moon, status: (moon ? "needs_date" : "draft") as PostStatus };
     if (e.event_type === "holiday") {
-      const end = e.end_date ?? e.start_date;
+      const end = breakEnd(e);
       const resume = nextSchoolDay(end, holidays);
       const sched = moon ? null : dayName(e.start_date) === "Monday"
         ? at(isoOf(new Date(d0(e.start_date).getTime() - 4 * DAY)), 17)   // Thursday before, 5 PM

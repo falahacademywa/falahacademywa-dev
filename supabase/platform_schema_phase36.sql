@@ -444,7 +444,7 @@ Jumu'ah Mubarak!
 
 Would you like to help Kent's first full-time Islamic school grow? Falah Academy is looking for volunteers!
 
-✏️ In the classroom: support small groups in reading, maths, Qur'an and more, always under a teacher's supervision.
+✏️ In the classroom: support small groups in reading, math, Qur'an and more, always under a teacher's supervision.
 🎓 Gain experience: students and graduates in education, Islamic studies or childcare can build classroom hours and a reference.
 🏫 Behind the scenes: help with events, fundraising, the library or the office.
 
@@ -516,7 +516,7 @@ on conflict (key) do nothing;
 
 -- seed: faith & reflection bank (faith-reflection-bank.md, 40 items)
 insert into public.social_faith_bank (n, kind, meaning, reference, tip) values
-  (1, $t$Qur'an$t$, $t$Indeed, with hardship comes ease.$t$, $t$Qur'an 94:6$t$, $t$When your child finds something hard this week, a new surah or a tricky maths problem, remind them of this verse and keep going together.$t$),
+  (1, $t$Qur'an$t$, $t$Indeed, with hardship comes ease.$t$, $t$Qur'an 94:6$t$, $t$When your child finds something hard this week, a new surah or a tricky math problem, remind them of this verse and keep going together.$t$),
   (2, $t$Hadith$t$, $t$Actions are judged by their intentions.$t$, $t$Sahih al-Bukhari 1; Sahih Muslim 1907$t$, $t$Before school or homework, help your child say what they are doing it for: "to learn and to please Allah."$t$),
   (3, $t$Qur'an$t$, $t$My Lord, increase me in knowledge.$t$, $t$Qur'an 20:114$t$, $t$Teach your child this short du'a ("Rabbi zidni 'ilma") to say before studying.$t$),
   (4, $t$Hadith$t$, $t$The best of you are those who learn the Qur'an and teach it.$t$, $t$Sahih al-Bukhari 5027$t$, $t$Ask your child to teach you one ayah they learned this week.$t$),

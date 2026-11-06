@@ -121,7 +121,7 @@ export default function SocialPosts() {
             return (
               <section key={s} className="space-y-2">
                 <h2 className="text-xs font-bold uppercase tracking-wide text-gray-400">{HEAD[s]} ({list.length})</h2>
-                {list.map((p) => <PostEditor key={p.id} p={p} onChanged={load} />)}
+                {list.map((p) => <PostEditor key={p.id} p={p} onChanged={load} onPosted={(m) => { setMsg(m); window.scrollTo({ top: 0, behavior: "smooth" }); }} />)}
               </section>
             );
           })}
@@ -158,7 +158,7 @@ function ArchivedPost({ p }: { p: SocialPost }) {
   );
 }
 
-function PostEditor({ p, onChanged }: { p: SocialPost; onChanged: () => void }) {
+function PostEditor({ p, onChanged, onPosted }: { p: SocialPost; onChanged: () => void; onPosted: (msg: string) => void }) {
   const { profile, can } = useAuth();
   const isAdmin = profile?.role === "admin";
   const canEdit = can("social", "edit");
@@ -216,7 +216,12 @@ function PostEditor({ p, onChanged }: { p: SocialPost; onChanged: () => void }) 
       try { const b = await (error as { context?: Response }).context?.json(); if (b?.error) detail = b.error; } catch { /* keep message */ }
       throw new Error(detail);
     }
-    if ((data as { ok?: boolean })?.ok === false) throw new Error((data as { error?: string }).error ?? "Posting failed");
+    const r = data as { ok?: boolean; error?: string; test?: boolean; skipped?: string; ig_permalink?: string | null };
+    if (r?.ok === false) throw new Error(r.error ?? "Posting failed");
+    if (r?.skipped) { onPosted(`"${f.title}" was not posted again: ${r.skipped}.`); return; }
+    onPosted(r?.test
+      ? `TEST MODE: "${f.title}" went through to ${f.platforms.join(" and ")} as a hidden test post (nothing is visible on the page). It is now in the Archive.`
+      : `Posted "${f.title}" to ${f.platforms.join(" and ")}. It is now in the Archive.`);
   });
   const schedule = () => act("schedule", async () => {
     if (missing.length) throw new Error("Fill in: " + missing.map((m) => `{${m}}`).join(", "));
