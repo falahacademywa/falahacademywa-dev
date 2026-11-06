@@ -6,6 +6,8 @@
 --   * Request notifications show the latest only: a new notification about a request replaces the
 --     older ones for the same person and the same request (one per request in the bell and on the
 --     teacher app's Today screen). Existing duplicates are cleared once below.
+--   * Red Comet "photo needs a look" alerts show the latest only too: one alert per person, student
+--     and subject, saying how many photos of that subject are waiting (record_photo_check below).
 --   * Red Comet: teachers enter the last workbook page in the photos they send, per subject. The
 --     teacher app shows "Last page uploaded: N" for each subject of the chosen student
 --     (work_uploads.page_last, the most recent upload that has one).
@@ -54,14 +56,82 @@ begin
 end; $$;
 drop trigger if exists notifications_request_latest_only on public.notifications;
 create trigger notifications_request_latest_only after insert on public.notifications
-  for each row when (new.link_path ~ '^/(teacher/requests|admin/teacher-requests)\?r=[0-9]+$')
+  for each row when (new.link_path ~ '^/(teacher/requests|admin/teacher-requests)\?r=[0-9]+$'
+                  or new.link_path ~ '^/(teacher/progress\?student=|admin/redcomet\?check=flagged&student=)[^&]+&subject=')
   execute function public.notifications_request_latest_only();
+
+-- ---------- Red Comet photo check: one alert per person, student and subject ----------
+-- Same as phase 31, except: the link carries the student and the subject (the pages ignore the
+-- extra parameters), so the trigger above keeps only the newest alert per person, student and
+-- subject; and the text counts every photo of that student and subject still waiting for a look.
+create or replace function public.record_photo_check(p_id bigint, p_ok boolean, p_label text, p_score numeric)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare w record; who uuid; notes jsonb := '[]'::jsonb; nid bigint; em text; nm text;
+        sname text; gname text; cnt int; subj text; msg text;
+begin
+  select wu.*, s.first_name, g.name as grade_name into w
+    from public.work_uploads wu
+    join public.enrollments e on e.id = wu.enrollment_id
+    join public.students s on s.id = e.student_id
+    join public.grades g on g.id = e.grade_id
+   where wu.id = p_id;
+  if w is null then return jsonb_build_object('found', false); end if;
+  if w.check_status <> 'pending' then return jsonb_build_object('found', true, 'skipped', w.check_status); end if;
+  update public.work_uploads
+     set check_status = case when p_ok then 'ok' else 'flagged' end,
+         check_label = p_label, check_score = p_score, checked_at = now()
+   where id = p_id;
+  if p_ok then return jsonb_build_object('found', true, 'flagged', false); end if;
+
+  sname := btrim(w.first_name); gname := w.grade_name; subj := coalesce(w.subject, 'workbook');
+  select count(*) into cnt from public.work_uploads
+   where enrollment_id = w.enrollment_id and subject is not distinct from w.subject and check_status = 'flagged';
+  msg := case when cnt <= 1 then
+      'A ' || subj || ' photo for ' || sname || ' (' || gname || ', ' || to_char(w.taken_at, 'Mon DD') ||
+      ') does not look like a workbook page (' || coalesce(p_label, 'unclear') || '). Open it and delete it, or mark it as school work. It will not go to the office until then.'
+    else
+      cnt || ' ' || subj || ' photos for ' || sname || ' (' || gname || ', latest ' || to_char(w.taken_at, 'Mon DD') ||
+      ') do not look like workbook pages (latest: ' || coalesce(p_label, 'unclear') || '). Open them and delete them, or mark them as school work. They will not go to the office until then.'
+    end;
+  for who in
+    select distinct x.uid from (
+      select w.uploaded_by as uid
+      union select t.user_id from public.teachers t
+              join public.teacher_grades tg on tg.teacher_id = t.id
+              join public.school_years y on y.id = tg.school_year_id and y.is_current
+              join public.enrollments e on e.id = w.enrollment_id and e.grade_id = tg.grade_id
+             where t.user_id is not null and t.app_access and t.active
+      union select p.id from public.profiles p where p.role = 'admin'
+      union select sp.user_id from public.staff_permissions sp where sp.module = 'redcomet' and sp.level = 'edit'
+    ) x where x.uid is not null
+  loop
+    insert into public.notifications (recipient_id, title, message, priority, link_path)
+    values (who, 'Red Comet photo needs a look', msg, 'action',
+            case when exists (select 1 from public.profiles where id = who and role in ('admin', 'staff'))
+                 then '/admin/redcomet?check=flagged&student=' || w.enrollment_id || '&subject=' || subj
+                 else '/teacher/progress?student=' || w.enrollment_id || '&subject=' || subj end)
+    returning id into nid;
+    select email, full_name into em, nm from public.profiles where id = who;
+    notes := notes || jsonb_build_object('id', nid, 'email', em, 'name', nm);
+  end loop;
+  return jsonb_build_object('found', true, 'flagged', true, 'student', sname, 'grade', gname,
+                            'subject', w.subject, 'taken_at', w.taken_at, 'path', w.path, 'notifications', notes);
+end; $$;
+revoke all on function public.record_photo_check(bigint, boolean, text, numeric) from public, anon, authenticated;
+grant execute on function public.record_photo_check(bigint, boolean, text, numeric) to service_role;
 
 -- one-off: keep only the newest request notification per person and request
 delete from public.notifications n
  where n.link_path ~ '^/(teacher/requests|admin/teacher-requests)\?r=[0-9]+$'
    and exists (select 1 from public.notifications m
                 where m.recipient_id = n.recipient_id and m.link_path = n.link_path
+                  and (m.created_at, m.id) > (n.created_at, n.id));
+
+-- one-off: older photo-check alerts (links without the subject) - keep the newest per person and link
+delete from public.notifications n
+ where n.title = 'Red Comet photo needs a look'
+   and exists (select 1 from public.notifications m
+                where m.title = n.title and m.recipient_id = n.recipient_id and m.link_path = n.link_path
                   and (m.created_at, m.id) > (n.created_at, n.id));
 
 select 'phase 37 ok' as result,
