@@ -17,7 +17,6 @@ import Settings from "./pages/admin/Settings";
 import CalendarAdmin from "./pages/admin/CalendarAdmin";
 import AnnouncementsAdmin from "./pages/admin/AnnouncementsAdmin";
 import Fees from "./pages/admin/Fees";
-import Academics from "./pages/admin/Academics";
 import Reports from "./pages/admin/Reports";
 import ParentActivity from "./pages/admin/ParentActivity";
 import AssignmentsAdmin from "./pages/admin/AssignmentsAdmin";
@@ -30,6 +29,7 @@ import SocialPosts from "./pages/admin/SocialPosts";
 import Volunteers from "./pages/admin/Volunteers";
 import Attendance from "./pages/admin/Attendance";
 import MeetingsAdmin from "./pages/admin/Meetings";
+import Placeholder from "./pages/admin/Placeholder";
 import Meet from "./pages/Meet";
 import TeacherMeetings from "./pages/teacher/Meetings";
 import ParentHome from "./pages/parent/ParentHome";
@@ -71,15 +71,18 @@ export default function App() {
             <Route path="teachers" element={<Teachers />} />
             <Route path="teachers/:id" element={<TeacherProfile />} />
             <Route path="fees" element={<Fees />} />
-            <Route path="academics" element={<Academics />} />
             <Route path="assignments" element={<AssignmentsAdmin />} />
             <Route path="updates" element={<ClassUpdates />} />
             <Route path="redcomet" element={<RedComet />} />
+            <Route path="redcomet/messages" element={<Placeholder title="Red Comet Messages" phase="the next step" />} />
             <Route path="meetings" element={<MeetingsAdmin />} />
             <Route path="calendar" element={<CalendarAdmin />} />
             <Route path="announcements" element={<AnnouncementsAdmin />} />
             <Route path="feedback" element={<Feedback />} />
             <Route path="reports" element={<Reports />} />
+            <Route path="reports/attendance" element={<Placeholder title="Attendance report" phase="the next step" />} />
+            <Route path="reports/fees" element={<Placeholder title="Fees report" phase="the next step" />} />
+            <Route path="reports/activity" element={<Placeholder title="Activity Log" phase="the next step" />} />
             <Route path="tasks" element={<Tasks />} />
             <Route path="teacher-requests" element={<TeacherRequests />} />
             <Route path="social" element={<SocialPosts />} />

@@ -202,7 +202,7 @@ export default function Fees() {
       <p className="mb-6 text-sm text-gray-500">
         One plan per enrollment (BR-010). Each student's fee can differ. $0 plans never get reminders (BR-121).
         Zelle receipts are read from the school Gmail every hour and posted automatically when the sender and amount are certain;
-        the rest wait below. Every payment gets a numbered receipt: the family sees it in the portal at once and receives the PDF by e-mail within the hour
+        the rest wait below. Every payment gets a numbered receipt: the family sees it in the portal at once and receives the PDF by e-mail within the hour.
         Tuition reminders are never sent automatically (phase 41): open Late-fee reminders below, tick the families and click Send. Every change to a payment is kept in the audit log and re-issues the receipt.
         A <span className="rounded-full bg-gray-200 px-1.5 py-0.5 text-xs font-semibold text-gray-700">Waived</span> month is not money: no receipt, not counted in totals, and the family sees "waived" instead of "due".
       </p>
