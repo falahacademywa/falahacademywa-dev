@@ -29,10 +29,10 @@ import SocialPosts from "./pages/admin/SocialPosts";
 import Volunteers from "./pages/admin/Volunteers";
 import Attendance from "./pages/admin/Attendance";
 import MeetingsAdmin from "./pages/admin/Meetings";
-import Placeholder from "./pages/admin/Placeholder";
 import ReportAttendance from "./pages/admin/ReportAttendance";
 import ReportFees from "./pages/admin/ReportFees";
 import ReportActivity from "./pages/admin/ReportActivity";
+import RedCometMessages from "./pages/admin/RedCometMessages";
 import PageTracker from "./components/PageTracker";
 import Meet from "./pages/Meet";
 import TeacherMeetings from "./pages/teacher/Meetings";
@@ -79,7 +79,7 @@ export default function App() {
             <Route path="assignments" element={<AssignmentsAdmin />} />
             <Route path="updates" element={<ClassUpdates />} />
             <Route path="redcomet" element={<RedComet />} />
-            <Route path="redcomet/messages" element={<Placeholder title="Red Comet Messages" phase="the next step" />} />
+            <Route path="redcomet/messages" element={<RedCometMessages />} />
             <Route path="meetings" element={<MeetingsAdmin />} />
             <Route path="calendar" element={<CalendarAdmin />} />
             <Route path="announcements" element={<AnnouncementsAdmin />} />
