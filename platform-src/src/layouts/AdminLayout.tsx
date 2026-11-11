@@ -100,12 +100,15 @@ export default function AdminLayout() {
   // Staff see only the entries their modules allow; an empty group disappears, a group with one
   // item left shows as that item.
   const ok = (i: Item) => !i.module || can(i.module);
+  // A–Z (President 2026-11-10): Dashboard first, then groups and links by name, each group's items
+  // A–Z; Settings and Tasks stay at the bottom (also A–Z).
+  const az = (a: { label: string }, b: { label: string }) => a.label.localeCompare(b.label);
   const entries: Entry[] = nav.flatMap((e): Entry[] => {
     if (!isGroup(e)) return ok(e) ? [e] : [];
-    const items = e.items.filter(ok);
+    const items = e.items.filter(ok).sort(az);
     return items.length === 0 ? [] : items.length === 1 ? [items[0]] : [{ ...e, items }];
-  });
-  const bottom = bottomNav.filter(ok);
+  }).sort((a, b) => (!isGroup(a) && a.to === "/admin" ? -1 : !isGroup(b) && b.to === "/admin" ? 1 : az(a, b)));
+  const bottom = bottomNav.filter(ok).sort(az);
   const isActive = (i: Item) => (i.end ? loc.pathname === i.to : loc.pathname === i.to || loc.pathname.startsWith(i.to + "/"));
   const activeGroup = entries.find((e) => isGroup(e) && e.items.some(isActive)) as Group | undefined;
   // Staff with view-only access to the current module: the page renders, nothing submits.
