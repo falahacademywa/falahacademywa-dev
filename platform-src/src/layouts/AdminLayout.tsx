@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-do
 import {
   type LucideIcon, LayoutDashboard, FileText, GraduationCap, School, ClipboardCheck, Wallet, Notebook, BookOpen,
   Users, UserRound, Presentation, Briefcase, IdCard, ClipboardList, HandHeart, Rocket, Images, Inbox, Megaphone,
-  Share2, CalendarDays, MessageSquare, BarChart3, Banknote, Activity, ListChecks, Settings, ChevronDown,
+  Share2, CalendarDays, MessageSquare, BarChart3, Banknote, Activity, ListChecks, Settings, ChevronDown, ChevronRight,
   PanelLeftClose, PanelLeftOpen, ChevronsLeft, Menu, LogOut, ArrowLeftRight,
 } from "lucide-react";
 import { useAuth } from "../lib/auth";
@@ -115,18 +115,17 @@ export default function AdminLayout() {
   const [open, setOpen] = useState(false);            // mobile drawer
   const [mode, setModeState] = useState<Mode>(readMode);
   const [lastShown, setLastShown] = useState<"full" | "icons">(readLast);
-  const [hover, setHover] = useState<string | null>(null);   // group opened by the mouse
   const [tapped, setTapped] = useState<Record<string, boolean>>({});   // group opened by a click/tap
   const [fly, setFly] = useState<{ group: string; top: number } | null>(null);   // icons-only pop-out
   const closeTimer = useRef<number | undefined>(undefined);
   function setMode(m: Mode) {
-    setModeState(m); setFly(null); setHover(null);
+    setModeState(m); setFly(null);
     if (m !== "hidden") setLastShown(m);
     try { localStorage.setItem(MODE_KEY, m); if (m !== "hidden") localStorage.setItem(MODE_KEY + ".last", m); } catch { /* private window */ }
   }
-  const enter = (g: string) => { window.clearTimeout(closeTimer.current); setHover(g); };
-  const leave = () => { window.clearTimeout(closeTimer.current); closeTimer.current = window.setTimeout(() => { setHover(null); setFly(null); }, 180); };
-  useEffect(() => { setFly(null); setHover(null); }, [loc.pathname]);
+  const enter = (_g: string) => { window.clearTimeout(closeTimer.current); };
+  const leave = () => { window.clearTimeout(closeTimer.current); closeTimer.current = window.setTimeout(() => setFly(null), 180); };
+  useEffect(() => { setFly(null); }, [loc.pathname]);
   const [notifs, setNotifs] = useState<Notif[]>([]);
   const [bellOpen, setBellOpen] = useState(false);
   const [counts, setCounts] = useState<MenuCounts>({});
@@ -200,33 +199,48 @@ export default function AdminLayout() {
     );
   }
 
+  // Groups open to the RIGHT on a computer (President 2026-11-10): hovering a group shows its
+  // items in a panel beside the menu, in both full and icons-only mode. On a phone (drawer) there
+  // is no room on the right, so a tap opens the group downwards.
   function groupRow(g: Group) {
     const Icon = g.icon;
     const total = g.items.reduce((s, i) => s + attention(i.to), 0);
-    const isOpen = activeGroup?.group === g.group || hover === g.group || !!tapped[g.group];
+    const isOpen = activeGroup?.group === g.group || !!tapped[g.group];
     const hasActive = activeGroup?.group === g.group;
-    if (iconsOnly) {
-      // desktop icons-only: the icon opens a pop-out; on the mobile drawer it behaves like the full menu
-      return (
-        <Fragment key={g.group}>
-          <button title={g.label}
-            onMouseEnter={(ev) => { const r = ev.currentTarget.getBoundingClientRect(); enter(g.group); setFly({ group: g.group, top: Math.max(8, Math.min(r.top - 6, window.innerHeight - 60 - g.items.length * 40)) }); }}
-            onMouseLeave={leave}
-            onClick={(ev) => { const r = ev.currentTarget.getBoundingClientRect(); setFly(fly?.group === g.group ? null : { group: g.group, top: r.top - 6 }); }}
-            className={`relative hidden w-full items-center justify-center rounded-lg py-2 lg:flex ${hasActive ? "bg-white/15 text-white" : "text-white/80 hover:bg-white/10"}`}>
-            <Icon size={18} aria-hidden />
-            {total > 0 && <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">{total}</span>}
-          </button>
-          <div className="lg:hidden">{fullGroup(g, Icon, total, isOpen, hasActive)}</div>
-        </Fragment>
-      );
-    }
-    return <Fragment key={g.group}>{fullGroup(g, Icon, total, isOpen, hasActive)}</Fragment>;
+    const current = hasActive ? g.items.find(isActive) : undefined;
+    const openFly = (el: HTMLElement) => {
+      const r = el.getBoundingClientRect();
+      enter(g.group);
+      setFly({ group: g.group, top: Math.max(8, Math.min(r.top - 6, window.innerHeight - 60 - g.items.length * 40)) });
+    };
+    const flyOpen = fly?.group === g.group;
+    return (
+      <Fragment key={g.group}>
+        <button title={iconsOnly ? g.label : undefined}
+          onMouseEnter={(ev) => openFly(ev.currentTarget)} onMouseLeave={leave}
+          onClick={(ev) => (flyOpen ? setFly(null) : openFly(ev.currentTarget))}
+          aria-expanded={flyOpen}
+          className={`relative hidden w-full items-center gap-2.5 rounded-lg py-2 text-left text-sm transition lg:flex ${iconsOnly ? "justify-center" : "px-3"} ${
+            hasActive ? "bg-white/15 font-semibold text-white" : flyOpen ? "bg-white/10 text-white" : "text-white/80 hover:bg-white/10"}`}>
+          <Icon size={18} className="shrink-0" aria-hidden />
+          {!iconsOnly && (
+            <span className="min-w-0 flex-1">
+              <span className="block truncate">{g.label}</span>
+              {current && <span className="block truncate text-[11px] font-normal text-emerald-300">{current.label}</span>}
+            </span>
+          )}
+          {!iconsOnly && total > 0 && <span className="font-semibold">({total})</span>}
+          {!iconsOnly && <ChevronRight size={15} className={`shrink-0 transition-transform ${flyOpen ? "translate-x-0.5 text-white" : "text-white/50"}`} aria-hidden />}
+          {iconsOnly && total > 0 && <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">{total}</span>}
+        </button>
+        <div className="lg:hidden">{fullGroup(g, Icon, total, isOpen, hasActive)}</div>
+      </Fragment>
+    );
   }
 
   function fullGroup(g: Group, Icon: LucideIcon, total: number, isOpen: boolean, hasActive: boolean) {
     return (
-      <div onMouseEnter={() => enter(g.group)} onMouseLeave={leave}>
+      <div>
         <button onClick={() => setTapped({ ...tapped, [g.group]: !tapped[g.group] })}
           aria-expanded={isOpen}
           className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm transition ${hasActive ? "font-semibold text-white" : "text-white/80 hover:bg-white/10"}`}>
@@ -350,14 +364,14 @@ export default function AdminLayout() {
         </div>
       </aside>
 
-      {/* Icons only: a group's items pop out beside the strip */}
-      {fly && mode === "icons" && (() => {
+      {/* A group's items pop out to the right of the menu (computer) */}
+      {fly && mode !== "hidden" && (() => {
         const g = entries.find((e) => isGroup(e) && e.group === fly.group) as Group | undefined;
         if (!g) return null;
         return (
           <div onMouseEnter={() => enter(g.group)} onMouseLeave={leave}
             style={{ top: fly.top }}
-            className="fixed left-16 z-[60] hidden w-56 rounded-xl bg-navy p-2 text-white shadow-2xl ring-1 ring-white/10 lg:block">
+            className={`fixed z-[60] hidden w-56 rounded-xl bg-navy p-2 text-white shadow-2xl ring-1 ring-white/10 lg:block ${mode === "icons" ? "left-16" : "left-60"}`}>
             <div className="px-2 pb-1 pt-0.5 text-[11px] font-bold uppercase tracking-wide text-emerald-300">{g.label}</div>
             {g.items.map((i) => itemLink(i, true, true))}
           </div>
