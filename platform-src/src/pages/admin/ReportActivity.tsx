@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { configMissing } from "../../lib/supabase";
 import { rpcAll, presetRange, downloadCsv, iso, type Preset } from "../../lib/reports";
-import { RangePicker, Chips, Tile } from "../../components/ReportControls";
+import { DateMenu, MultiSelect, StudentSelect, SearchBox, FilterTags, Tile } from "../../components/ReportControls";
 
 // Reports → Activity Log (phase 42, President 2026-11-10): what parents, teachers, staff and the
 // system did — pages opened, actions (forms, prints, uploads), every change to the data
@@ -24,10 +24,25 @@ const ENTITY: Record<string, string> = {
   assignments: "assignment", parent_students: "parent link", profiles: "account", teacher_requests: "teacher request",
   teacher_request_notes: "request note", feedback: "feedback", app_settings: "setting", fee_reminders: "fee reminder",
   work_uploads: "Red Comet photo", volunteer_applications: "volunteer application", medical_info: "medical form", media_consent: "media consent",
-  social_posts: "social post", social_templates: "social template", ptm_bookings: "meeting booking", ptm_remarks: "meeting remark", student: "student",
+  social_posts: "social post", social_templates: "social template", redcomet_messages: "Red Comet message", ptm_bookings: "meeting booking", ptm_remarks: "meeting remark", student: "student",
 };
+// page addresses → the names people see in the menu
+const PAGES: [RegExp, string][] = [
+  [/^\/admin\/?$/, "Dashboard"], [/^\/admin\/students\/.+/, "a student profile"], [/^\/admin\/students/, "Students"],
+  [/^\/admin\/attendance/, "Attendance"], [/^\/admin\/fees/, "Fees"], [/^\/admin\/updates/, "Class Updates"], [/^\/admin\/assignments/, "Assignments"],
+  [/^\/admin\/parents\/.+/, "a parent profile"], [/^\/admin\/parents/, "Parents"], [/^\/admin\/meetings/, "Parent Meetings"],
+  [/^\/admin\/teachers\/.+/, "a teacher profile"], [/^\/admin\/teachers/, "Teachers"], [/^\/admin\/teacher-requests/, "Teacher Requests"],
+  [/^\/admin\/admissions/, "Admissions"], [/^\/admin\/volunteers/, "Volunteers"], [/^\/admin\/redcomet\/messages/, "Red Comet › Messages"],
+  [/^\/admin\/redcomet/, "Red Comet › Student Work"], [/^\/admin\/announcements/, "Announcements"], [/^\/admin\/social/, "Social Posts"],
+  [/^\/admin\/calendar/, "Calendar"], [/^\/admin\/feedback/, "Feedback"], [/^\/admin\/reports\/attendance/, "Reports › Attendance"],
+  [/^\/admin\/reports\/fees/, "Reports › Fees"], [/^\/admin\/reports\/activity/, "Reports › Activity Log"], [/^\/admin\/tasks/, "Tasks"],
+  [/^\/admin\/settings/, "Settings"], [/^\/teacher\/update/, "Teacher app › Class update"], [/^\/teacher\/progress/, "Teacher app › Red Comet"],
+  [/^\/teacher\/meetings/, "Teacher app › Meetings"], [/^\/teacher\/requests/, "Teacher app › Requests"], [/^\/teacher\/students/, "Teacher app › a student"],
+  [/^\/teacher/, "Teacher app › Today"], [/^\/parent/, "Family Portal"],
+];
+const pageName = (path: string) => PAGES.find(([re]) => re.test(path))?.[1] ?? path;
 function what(e: Ev) {
-  if (e.kind === "visit") return "Opened " + (e.detail ?? "").replace(/ · TESTDATA$/, "");
+  if (e.kind === "visit") return "Opened " + pageName((e.detail ?? "").replace(/ · TESTDATA$/, "").replace(/ TEST44$/, ""));
   if (e.kind === "sign-in") return { login: "Signed in", logout: "Signed out", user_recovery_requested: "Asked for a password reset", user_updated_password: "Changed password" }[e.action] ?? e.action;
   if (e.kind === "action") return { open_portal: "Opened the Family Portal", view_child: "Looked at a child", open_form: "Opened a form", print_statement: "Printed the tuition statement", post_update: "Posted a class update", upload_photos: "Uploaded Red Comet photos" }[e.action] ?? e.action.replace(/_/g, " ");
   const m = e.action.match(/^(insert|update|delete)_(.+)$/);
@@ -59,6 +74,12 @@ export default function ReportActivity() {
     const m = new Map<string, string>(); (rows ?? []).forEach((r) => m.set(r.user_id ?? "system", `${r.person} (${r.role})`));
     return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1]));
   }, [rows]);
+  // people grouped by role for the picker
+  const personGroups = useMemo(() => {
+    const g = new Map<string, [string, string][]>();
+    (rows ?? []).forEach((r) => { const k = r.role[0].toUpperCase() + r.role.slice(1) + "s"; const id = r.user_id ?? "system"; if (!g.has(k)) g.set(k, []); if (!g.get(k)!.some(([x]) => x === id)) g.get(k)!.push([id, r.person]); });
+    return [...g.entries()].filter(([k]) => !roles.length || roles.some((r) => k.toLowerCase().startsWith(r))).sort().map(([k, l]) => [k, l.sort((a, b) => a[1].localeCompare(b[1]))] as [string, [string, string][]]);
+  }, [rows, roles]);
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return (rows ?? []).filter((r) => (!kinds.length || kinds.includes(r.kind)) && (!roles.length || roles.includes(r.role))
@@ -85,20 +106,21 @@ export default function ReportActivity() {
       </div>
       <p className="mb-4 text-sm text-gray-500">Pages people opened, things they did and every change to the school's records, newest first. Page visits are kept for 400 days; changes are kept permanently.</p>
 
-      <div className="mb-4 space-y-2 rounded-xl border border-gray-200 bg-silver/40 p-3">
-        <RangePicker {...range} onChange={setRange} presets={PRESETS} />
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-          <Chips label="Who" options={ROLES} value={roles} onChange={(v) => { setRoles(v); setPerson(""); }} />
-          <Chips label="What" options={KINDS} value={kinds} onChange={setKinds} />
-        </div>
+      <div className="mb-4">
         <div className="flex flex-wrap items-center gap-2">
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, page, record…" className="w-64 rounded border border-gray-300 bg-white px-2 py-1 text-sm" />
-          <select value={person} onChange={(e) => setPerson(e.target.value)} className="rounded border border-gray-300 bg-white px-2 py-1 text-xs">
-            <option value="">Everyone ({people.length})</option>
-            {people.filter(([, n]) => !roles.length || roles.some((r) => n.endsWith(`(${r})`))).map(([id, n]) => <option key={id} value={id}>{n}</option>)}
-          </select>
-          {(q || person || kinds.length || roles.length) ? <button onClick={() => { setQ(""); setPerson(""); setKinds([]); setRoles([]); }} className="text-xs text-gray-500 hover:text-navy">Clear filters</button> : null}
+          <SearchBox value={q} onChange={setQ} placeholder="Search name, page or record" />
+          <DateMenu {...range} onChange={setRange} presets={PRESETS} />
+          <MultiSelect label="Who" options={ROLES} value={roles} onChange={(v) => { setRoles(v); setPerson(""); }} />
+          <MultiSelect label="What" options={KINDS.map((k) => ({ key: k.key, label: k.label, dot: ({ visit: "bg-blue-500", action: "bg-purple-500", change: "bg-amber-500", "sign-in": "bg-emerald-500" })[k.key] }))} value={kinds} onChange={setKinds} />
+          <StudentSelect value={person} onChange={setPerson} label="Everyone" groups={personGroups} />
         </div>
+        <FilterTags tags={[
+          ...(range.preset !== "week" ? [{ label: range.preset === "custom" ? `${range.from} – ${range.to}` : PRESETS.find(([p]) => p === range.preset)![1], clear: () => setRange({ preset: "week", ...presetRange("week") }) }] : []),
+          ...roles.map((r) => ({ label: ROLES.find((x) => x.key === r)!.label, clear: () => setRoles(roles.filter((x) => x !== r)) })),
+          ...kinds.map((k) => ({ label: KINDS.find((x) => x.key === k)!.label, clear: () => setKinds(kinds.filter((x) => x !== k)) })),
+          ...(person ? [{ label: people.find(([id]) => id === person)?.[1] ?? "Person", clear: () => setPerson("") }] : []),
+          ...(q ? [{ label: `"${q}"`, clear: () => setQ("") }] : []),
+        ]} />
       </div>
 
       {err && <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{err}</div>}

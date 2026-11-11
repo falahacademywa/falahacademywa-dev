@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { configMissing } from "../../lib/supabase";
-import { rpcAll, presetRange, periodKey, periodLabel, downloadCsv, pct, type Preset, type Period } from "../../lib/reports";
-import { RangePicker, Chips, PeriodToggle, Tile, DrillRow } from "../../components/ReportControls";
+import { rpcAll, presetRange, periodKey, periodLabel, downloadCsv, pct, PRESETS, type Preset, type Period } from "../../lib/reports";
+import { DateMenu, MultiSelect, StudentSelect, Segmented, FilterTags, Tile, DrillRow } from "../../components/ReportControls";
 
 // Reports → Attendance (phase 42, President 2026-11-10): drill down school → grade → student →
 // day / month / year, filtered by grade, student, status and a date range, with totals everywhere.
@@ -46,6 +46,11 @@ export default function ReportAttendance() {
     return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1]));
   }, [rows, grades]);
 
+  const studentGroups = useMemo(() => {
+    const g = new Map<string, Map<string, string>>();
+    (rows ?? []).filter((r) => !grades.length || grades.includes(r.grade)).forEach((r) => { if (!g.has(r.grade)) g.set(r.grade, new Map()); g.get(r.grade)!.set(r.student_id, r.student); });
+    return gradeOpts.filter((o) => g.has(o.key)).map((o) => [o.key, [...g.get(o.key)!.entries()].sort((a, b) => a[1].localeCompare(b[1]))] as [string, [string, string][]]);
+  }, [rows, grades, gradeOpts]);
   // the status filter narrows which marks are listed; percentages always use all marks of the selection
   const base = useMemo(() => (rows ?? []).filter((r) => (!grades.length || grades.includes(r.grade)) && (!student || r.student_id === student)), [rows, grades, student]);
   const shown = useMemo(() => base.filter((r) => !statuses.length || statuses.includes(r.status)), [base, statuses]);
@@ -93,17 +98,20 @@ export default function ReportAttendance() {
       </div>
       <p className="mb-4 text-sm text-gray-500">Click a grade to see its students, a student to see the {period === "day" ? "days" : period === "month" ? "months" : "years"}. "Attended" counts present and late.</p>
 
-      <div className="mb-4 space-y-2 rounded-xl border border-gray-200 bg-silver/40 p-3">
-        <RangePicker {...range} onChange={setRange} />
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-          <Chips label="Grade" options={gradeOpts} value={grades} onChange={(v) => { setGrades(v); setStudent(""); }} />
-          <Chips label="Status" options={STATUS} value={statuses} onChange={setStatuses} />
-          <PeriodToggle value={period} onChange={setPeriod} />
-          <select value={student} onChange={(e) => setStudent(e.target.value)} className="rounded border border-gray-300 bg-white px-2 py-1 text-xs">
-            <option value="">All students ({studentOpts.length})</option>
-            {studentOpts.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
-          </select>
+      <div className="mb-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <DateMenu {...range} onChange={setRange} />
+          <MultiSelect label="Grade" options={gradeOpts} value={grades} onChange={(v) => { setGrades(v); setStudent(""); }} />
+          <StudentSelect value={student} onChange={setStudent} groups={studentGroups} />
+          <MultiSelect label="Status" options={STATUS.map((s) => ({ key: s.key, label: s.label, dot: ({ present: "bg-emerald-500", late: "bg-amber-500", absent: "bg-red-500" })[s.key] }))} value={statuses} onChange={setStatuses} />
+          <span className="ml-auto"><Segmented label="Show by" value={period} onChange={setPeriod} options={[{ key: "day", label: "Day" }, { key: "month", label: "Month" }, { key: "year", label: "Year" }]} /></span>
         </div>
+        <FilterTags tags={[
+          ...(range.preset !== "month" ? [{ label: range.preset === "custom" ? `${range.from} – ${range.to}` : PRESETS.find(([p]) => p === range.preset)![1], clear: () => setRange({ preset: "month", ...presetRange("month") }) }] : []),
+          ...grades.map((g) => ({ label: g, clear: () => setGrades(grades.filter((x) => x !== g)) })),
+          ...(student ? [{ label: studentOpts.find(([id]) => id === student)?.[1] ?? "Student", clear: () => setStudent("") }] : []),
+          ...statuses.map((st) => ({ label: STATUS.find((x) => x.key === st)!.label, clear: () => setStatuses(statuses.filter((x) => x !== st)) })),
+        ]} />
       </div>
 
       {err && <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{err}</div>}

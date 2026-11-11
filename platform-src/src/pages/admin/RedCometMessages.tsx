@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase, configMissing } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
 import { presetRange, type Preset } from "../../lib/reports";
+import { DateMenu, MultiSelect, StudentSelect, SearchBox, FilterTags } from "../../components/ReportControls";
 
 // Red Comet → Messages (phase 44, President 2026-11-10): an inbox.
 //   Tabs: Needs me (new + drafts to approve) · With Claude · To post · Done · All
@@ -46,9 +47,9 @@ export default function RedCometMessages() {
   const [err, setErr] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("needs");
   const [q, setQ] = useState("");
-  const [subject, setSubject] = useState("");
+  const [subjects, setSubjects] = useState<string[]>([]);
   const [student, setStudent] = useState("");
-  const [teacher, setTeacher] = useState("");
+  const [teachersSel, setTeachersSel] = useState<string[]>([]);
   const [sel, setSel] = useState<number | null>(null);
 
   async function load() {
@@ -73,22 +74,22 @@ export default function RedCometMessages() {
   const teachers = useMemo(() => [...new Set((rows ?? []).map((r) => r.from_name ?? "").filter(Boolean))].sort(), [rows]);
   const filtered = useMemo(() => {
     const n = q.trim().toLowerCase();
-    return (rows ?? []).filter((r) => (!subject || r.subject === subject) && (!student || r.student_id === student) && (!teacher || r.from_name === teacher)
+    return (rows ?? []).filter((r) => (!subjects.length || subjects.includes(r.subject)) && (!student || r.student_id === student) && (!teachersSel.length || teachersSel.includes(r.from_name ?? ""))
       && (!n || [r.body, r.title, r.activity, r.from_name, name(r), r.reply_draft, r.reply_text].some((x) => (x ?? "").toLowerCase().includes(n))));
-  }, [rows, subject, student, teacher, q]);
+  }, [rows, subjects, student, teachersSel, q]);
   const inTab = (t: Tab) => filtered.filter((r) => TABS.find((x) => x.key === t)!.st.includes(r.status));
   const list = inTab(tab);
   const current = (rows ?? []).find((r) => r.id === sel) ?? null;
   // on a computer the first message opens by itself; on a phone the list shows first
   useEffect(() => {
     if (window.innerWidth >= 1024 && (!current || !list.some((r) => r.id === current.id))) setSel(list[0]?.id ?? null);
-  }, [tab, rows, subject, student, teacher, q]);
+  }, [tab, rows, subjects, student, teachersSel, q]);
 
   const tags: { label: string; clear: () => void }[] = [
-    ...(subject ? [{ label: subject, clear: () => setSubject("") }] : []),
-    ...(student ? [{ label: byGrade.flatMap(([, m]) => [...m.entries()]).find(([id]) => id === student)?.[1] ?? "Student", clear: () => setStudent("") }] : []),
-    ...(teacher ? [{ label: teacher, clear: () => setTeacher("") }] : []),
     ...(range.preset !== "year" ? [{ label: range.preset === "custom" ? `${range.from} – ${range.to}` : DATES.find(([p]) => p === range.preset)![1], clear: () => setRange({ preset: "year", ...presetRange("year") }) }] : []),
+    ...subjects.map((x) => ({ label: x, clear: () => setSubjects(subjects.filter((y) => y !== x)) })),
+    ...(student ? [{ label: byGrade.flatMap(([, m]) => [...m.entries()]).find(([id]) => id === student)?.[1] ?? "Student", clear: () => setStudent("") }] : []),
+    ...teachersSel.map((x) => ({ label: x, clear: () => setTeachersSel(teachersSel.filter((y) => y !== x)) })),
     ...(q ? [{ label: `"${q}"`, clear: () => setQ("") }] : []),
   ];
 
@@ -98,7 +99,6 @@ export default function RedCometMessages() {
     load();
   }
 
-  const sel_ = "rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm text-gray-700";
   return (
     <div className="max-w-6xl">
       <h1 className="font-display text-2xl font-semibold text-navy">Red Comet Messages</h1>
@@ -118,37 +118,17 @@ export default function RedCometMessages() {
         })}
       </div>
 
-      {/* one filter bar */}
-      <div className="mb-2 flex flex-wrap items-center gap-2">
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search messages and replies" className={`${sel_} min-w-[12rem] flex-1`} />
-        <select value={subject} onChange={(e) => setSubject(e.target.value)} className={sel_}>
-          <option value="">All subjects</option>{SUBJECTS.map((s) => <option key={s}>{s}</option>)}
-        </select>
-        <select value={student} onChange={(e) => setStudent(e.target.value)} className={sel_}>
-          <option value="">All students</option>
-          {byGrade.map(([g, m]) => <optgroup key={g} label={g}>{[...m.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([id, n]) => <option key={id} value={id}>{n}</option>)}</optgroup>)}
-        </select>
-        <select value={teacher} onChange={(e) => setTeacher(e.target.value)} className={sel_}>
-          <option value="">All teachers</option>{teachers.map((t) => <option key={t}>{t}</option>)}
-        </select>
-        <select value={range.preset} onChange={(e) => { const p = e.target.value as Preset; setRange(p === "custom" ? { ...range, preset: p } : { preset: p, ...presetRange(p) }); }} className={sel_}>
-          {DATES.map(([p, l]) => <option key={p} value={p}>{l}</option>)}
-        </select>
-        {range.preset === "custom" && (
-          <span className="flex items-center gap-1 text-xs text-gray-500">
-            <input type="date" value={range.from} onChange={(e) => setRange({ ...range, from: e.target.value })} className={sel_} /> to
-            <input type="date" value={range.to} onChange={(e) => setRange({ ...range, to: e.target.value })} className={sel_} />
-          </span>
-        )}
-      </div>
-      {tags.length > 0 && (
-        <div className="mb-3 flex flex-wrap items-center gap-1.5">
-          {tags.map((t) => (
-            <button key={t.label} onClick={t.clear} className="flex items-center gap-1 rounded-full bg-navy/10 px-2.5 py-0.5 text-xs font-semibold text-navy hover:bg-navy/20">{t.label} <span aria-hidden>✕</span></button>
-          ))}
-          <button onClick={() => { tags.forEach((t) => t.clear()); }} className="text-xs text-gray-500 hover:text-navy">Clear all</button>
+      {/* one filter bar (same as the reports) */}
+      <div className="mb-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <SearchBox value={q} onChange={setQ} placeholder="Search messages and replies" />
+          <DateMenu {...range} onChange={setRange} presets={DATES} />
+          <MultiSelect label="Subject" options={SUBJECTS.map((x) => ({ key: x, label: x }))} value={subjects} onChange={setSubjects} />
+          <StudentSelect value={student} onChange={setStudent} groups={byGrade.map(([g, m]) => [g, [...m.entries()].sort((x, y) => x[1].localeCompare(y[1]))] as [string, [string, string][]])} />
+          <MultiSelect label="Teacher" options={teachers.map((x) => ({ key: x, label: x }))} value={teachersSel} onChange={setTeachersSel} />
         </div>
-      )}
+        <FilterTags tags={tags} />
+      </div>
 
       {err && <div className="mb-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">{err}</div>}
       {rows === null ? <p className="text-sm text-gray-400">Loading…</p> : (
