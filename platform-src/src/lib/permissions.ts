@@ -23,7 +23,6 @@ export const MODULES: Module[] = [
   { key: "announcements", label: "Announcements",             paths: ["/admin/announcements"] },
   { key: "social",        label: "Social posts",              paths: ["/admin/social"],     note: "Facebook + Instagram queue; edit = write, schedule-ready and skip posts, and post the unplanned-closure (T6) posts; everything else is posted by the President or an admin (phase 36)" },
   { key: "feedback",      label: "Feedback",                  paths: ["/admin/feedback"] },
-  { key: "reports",       label: "Reports: exports (old page)", paths: ["/admin/reports"],  note: "CSV exports; only shows data from modules the person can view" },
   { key: "report_attendance", label: "Reports: Attendance",   paths: ["/admin/reports/attendance"], note: "drill-down by grade, student, status and dates (President 2026-11-10: President only until granted)" },
   { key: "report_fees",   label: "Reports: Fees",             paths: ["/admin/reports/fees"], note: "drill-down by grade, student, payment status and dates (President only until granted)" },
   { key: "report_activity", label: "Reports: Activity Log",   paths: ["/admin/reports/activity"], note: "what parents, teachers and staff did in the portal (President only until granted)" },

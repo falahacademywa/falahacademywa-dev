@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase, configMissing } from "../../lib/supabase";
 import SecureImg from "../../components/SecureImg";
 import DocumentsGrid from "../../components/DocumentsGrid";
+import { downloadCsv } from "../../lib/reports";
 
 interface StudentRow {
   id: string;
@@ -32,7 +33,7 @@ export default function Students() {
   useEffect(() => {
     if (configMissing) return;
     supabase.from("students")
-      .select("id, student_no, first_name, last_name, archived, profile_photo_url, enrollments ( school_year, grade_name, status )")
+      .select("id, student_no, first_name, last_name, date_of_birth, archived, profile_photo_url, enrollments ( school_year, grade_name, status )")
       .then(({ data }) => {
         setRows((data as unknown as StudentRow[]) ?? []);
         setLoading(false);
@@ -96,6 +97,11 @@ export default function Students() {
             <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
             Show archived
           </label>
+          {view === "list" && (
+            <button onClick={() => downloadCsv("falah-roster.csv", ["Student #", "First name", "Last name", "Date of birth", "Grade", "School year", "Status"],
+              filtered.map((r) => { const e = current(r); return [r.student_no, r.first_name, r.last_name, (r as StudentRow & { date_of_birth?: string }).date_of_birth ?? "", e?.grade_name ?? "", e?.school_year ?? "", r.archived ? "Archived" : "Active"]; }))}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-600 hover:bg-silver">⬇ Roster CSV</button>
+          )}
           <input
             placeholder="Search name or student ID…"
             className="w-64 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-royal focus:outline-none"

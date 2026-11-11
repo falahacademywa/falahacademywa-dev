@@ -17,7 +17,6 @@ import Settings from "./pages/admin/Settings";
 import CalendarAdmin from "./pages/admin/CalendarAdmin";
 import AnnouncementsAdmin from "./pages/admin/AnnouncementsAdmin";
 import Fees from "./pages/admin/Fees";
-import Reports from "./pages/admin/Reports";
 import ParentActivity from "./pages/admin/ParentActivity";
 import AssignmentsAdmin from "./pages/admin/AssignmentsAdmin";
 import ClassUpdates from "./pages/admin/ClassUpdates";
@@ -84,7 +83,6 @@ export default function App() {
             <Route path="calendar" element={<CalendarAdmin />} />
             <Route path="announcements" element={<AnnouncementsAdmin />} />
             <Route path="feedback" element={<Feedback />} />
-            <Route path="reports" element={<Reports />} />
             <Route path="reports/attendance" element={<ReportAttendance />} />
             <Route path="reports/fees" element={<ReportFees />} />
             <Route path="reports/activity" element={<ReportActivity />} />

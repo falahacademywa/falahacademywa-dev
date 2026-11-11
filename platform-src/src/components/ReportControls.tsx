@@ -110,14 +110,14 @@ export function DateMenu({ preset, from, to, onChange, presets = PRESETS, monthO
   const lastDay = (ym: string) => { const [y, m] = ym.split("-").map(Number); return `${ym}-${String(new Date(y, m, 0).getDate()).padStart(2, "0")}`; };
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5">
-      <label className={ctl}>
-        <span aria-hidden>📅</span>
+      <span className="relative inline-flex">
+        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" aria-hidden>📅</span>
         <select value={preset} onChange={(e) => { const p = e.target.value as Preset; onChange(p === "custom" ? { preset: p, from, to } : { preset: p, ...presetRange(p) }); }}
-          className="cursor-pointer appearance-none bg-transparent pr-1 outline-none">
+          aria-label="Dates" className={`${ctl} cursor-pointer appearance-none pl-9 pr-8 outline-none`}>
           {presets.map(([p, l]) => <option key={p} value={p}>{l === "Custom" ? "Custom dates" : l}</option>)}
         </select>
-        <span className="text-gray-400" aria-hidden>▾</span>
-      </label>
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden>▾</span>
+      </span>
       {preset === "custom" && (monthOnly ? (
         <>
           <input type="month" value={from.slice(0, 7)} onChange={(e) => onChange({ preset, from: e.target.value + "-01", to })} className={ctl} />
@@ -181,14 +181,15 @@ export function StudentSelect({ value, onChange, groups, label = "All students" 
   value: string; onChange: (v: string) => void; groups: [string, [string, string][]][]; label?: string;
 }) {
   return (
-    <label className={`${ctl} ${value ? "border-navy/40 bg-navy/5" : ""}`}>
-      <span aria-hidden>👤</span>
-      <select value={value} onChange={(e) => onChange(e.target.value)} className="max-w-[12rem] cursor-pointer appearance-none truncate bg-transparent pr-1 outline-none">
+    <span className="relative inline-flex">
+      <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" aria-hidden>👤</span>
+      <select value={value} onChange={(e) => onChange(e.target.value)} aria-label={label}
+        className={`${ctl} max-w-[15rem] cursor-pointer appearance-none truncate pl-9 pr-8 outline-none ${value ? "border-navy/40 bg-navy/5 font-semibold text-navy" : ""}`}>
         <option value="">{label}</option>
         {groups.map(([g, list]) => <optgroup key={g} label={g}>{list.map(([id, n]) => <option key={id} value={id}>{n}</option>)}</optgroup>)}
       </select>
-      <span className="text-gray-400" aria-hidden>▾</span>
-    </label>
+      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden>▾</span>
+    </span>
   );
 }
 

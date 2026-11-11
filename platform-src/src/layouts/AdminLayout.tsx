@@ -37,8 +37,8 @@ const nav: Entry[] = [
   { group: "staff", label: "Staff", icon: Briefcase, items: [
     { to: "/admin/teachers", label: "Teachers", module: "teachers", icon: IdCard },
     { to: "/admin/teacher-requests", label: "Teacher Requests", module: "teacher_requests", icon: ClipboardList },
+    { to: "/admin/volunteers", label: "Volunteers", module: "volunteers", icon: HandHeart },
   ] },
-  { to: "/admin/volunteers", label: "Volunteers", module: "volunteers", icon: HandHeart },
   { group: "redcomet", label: "Red Comet", icon: Rocket, items: [
     { to: "/admin/redcomet", label: "Student Work", end: true, module: "redcomet", icon: Images },
     { to: "/admin/redcomet/messages", label: "Messages", module: "redcomet", icon: Inbox },
