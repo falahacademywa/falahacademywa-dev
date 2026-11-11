@@ -76,7 +76,7 @@ export default function LateFeeReminders({ canSend }: { canSend: boolean }) {
     if (error) return setNote({ ok: false, text: "Not sent: " + error.message });
     const d = data as { families: number; emailed: number; in_app: number };
     setNote({ ok: true, text: `Reminder sent to ${d.families} famil${d.families === 1 ? "y" : "ies"}: ${d.emailed} e-mail${d.emailed === 1 ? "" : "s"}, ${d.in_app} portal notification${d.in_app === 1 ? "" : "s"}.` +
-      (d.emailed < d.families ? ` ${d.families - d.emailed} famil${d.families - d.emailed === 1 ? "y was" : "ies were"} not e-mailed (no usable address, or e-mail is switched off here) and got the portal note only.` : "") });
+      (d.emailed < d.families ? ` ${d.families - d.emailed} famil${d.families - d.emailed === 1 ? "y was" : "ies were"} not e-mailed (no usable address, or e-mail is switched off here); families with a portal login still see the note there.` : "") });
     loadRows();
   }
 
