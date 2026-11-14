@@ -27,7 +27,7 @@ export default function ParentFeed({ items, title = "Feed", empty }: { items: Fe
     return items
       .filter((i) => kind === "all" || i.kind === kind)
       .filter((i) => { const t = i.text.toLowerCase(); return words.every((w) => t.includes(w)); })
-      .sort((a, b) => (a.top !== b.top ? (a.top ? -1 : 1) : a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+      .sort((a, b) => (!!a.top !== !!b.top ? (a.top ? -1 : 1) : a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
   }, [items, q, kind]);
 
   const counts = useMemo(() => {
