@@ -133,6 +133,10 @@ drop trigger if exists notification_email_parent on public.notifications;
 create trigger notification_email_parent after insert on public.notifications
   for each row execute function public.trg_notification_email_parent();
 
+-- internal trigger functions: nobody calls them directly (security rule, phase 38)
+revoke execute on function public.trg_notification_fanout() from public, anon, authenticated;
+revoke execute on function public.trg_notification_email_parent() from public, anon, authenticated;
+
 -- check: should return 3 rows (fanout trigger, email trigger, realtime)
 select 'fanout trigger' as item, count(*)::text as ok from pg_trigger where tgname = 'notification_fanout'
 union all select 'parent e-mail trigger', count(*)::text from pg_trigger where tgname = 'notification_email_parent'
