@@ -7,6 +7,7 @@ import { useAuth } from "../../lib/auth";
 import { moduleForPath } from "../../lib/permissions";
 import { type GradeLite, gradeColor } from "../../lib/calendar";
 import { usDate } from "../../lib/format";
+import { loadFormStudents, missingOf } from "../../lib/formsStatus";
 
 // Monday–Sunday of the week containing `iso`
 function weekOf(iso: string): [string, string] {
@@ -102,15 +103,9 @@ export default function Dashboard() {
           .eq("status", "active").eq("enrollments.status", "active").gt("total_amount", 0)
           .then(({ data }) => data ?? []),
         count("volunteer_applications", (q) => q.in("status", ["new", "contacted", "screening"])).catch(() => 0),
-        // students missing at least one required document (TODO #138)
-        Promise.all([
-          supabase.from("document_types").select("name").eq("active", true),
-          supabase.from("students").select("id, enrollments!inner ( status ), document_references ( document_type )").eq("archived", false).eq("enrollments.status", "active"),
-        ]).then(([{ data: t }, { data: st }]) => {
-          const req = ((t as { name: string }[]) ?? []).map((x) => x.name);
-          return ((st as unknown as { document_references: { document_type: string }[] }[]) ?? [])
-            .filter((x) => req.some((r) => !x.document_references.some((d) => d.document_type === r))).length;
-        }),
+        // students with an electronic form not filled in: the same rule and rows as Students → Forms
+        // (President 2026-11-22: count the portal's forms, not the paper documents)
+        loadFormStudents(can("health")).then((rows) => rows.filter((x) => missingOf(x, can("health")).length > 0).length).catch(() => 0),
       ]);
       type Pay = { payment_date: string; period_month: string | null; payment_method: string };
       const due = (plans as { start_date: string | null; payments: Pay[] }[])
@@ -122,7 +117,7 @@ export default function Dashboard() {
       const paid = due.length - outstanding - waivedN;
       setWidgets([
         { label: "Total Students", value: students, to: "/admin/students" },
-        { label: "Missing documents", value: docs, to: "/admin/students?view=docs" },
+        { label: "Missing forms", value: docs, to: "/admin/students?view=docs" },
         { label: "New Applications", value: applicants, to: "/admin/admissions" },
         { label: "Volunteers in progress", value: volunteers, to: "/admin/volunteers" },
         { label: "Present Today", value: presentToday, to: "/admin/attendance" },
@@ -146,19 +141,23 @@ export default function Dashboard() {
           project URL and anon key in <code>src/lib/supabase.ts</code>.
         </div>
       )}
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+      {/* Small square tiles, all the same size, full-size type (President 2026-11-22: "do not reduce
+          font, reduce size", then "make them square"): an 8.5rem square each, wrapping, instead of
+          columns stretched across the page; three to a row on a phone. Red Comet, Class updates and
+          Tasks below keep their own shape. */}
+      <div className="flex flex-wrap gap-2.5">
         {widgets.filter(allowed).map((w) => (
           <Link key={w.label} to={w.to}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm transition hover:border-royal hover:shadow-md">
+            className="flex aspect-square w-[calc((100%-1.25rem)/3)] flex-col items-center justify-center rounded-xl border border-gray-200 bg-white p-2 text-center shadow-sm transition hover:border-royal hover:shadow-md sm:w-[8.5rem] sm:p-3">
             {w.pair ? (
-              <div className="flex items-end gap-3">
-                <div><div className="font-display text-xl font-semibold leading-tight text-green-600">{w.pair.paid}</div><div className="text-[10px] font-semibold text-green-700">Paid</div></div>
-                <div><div className={`font-display text-xl font-semibold leading-tight ${w.pair.unpaid ? "text-red-600" : "text-gray-300"}`}>{w.pair.unpaid}</div><div className={`text-[10px] font-semibold ${w.pair.unpaid ? "text-red-700" : "text-gray-400"}`}>Unpaid</div></div>
+              <div className="flex items-end justify-center gap-3">
+                <div><div className="font-display text-3xl font-semibold leading-none text-green-600">{w.pair.paid}</div><div className="mt-0.5 text-xs font-semibold text-green-700">Paid</div></div>
+                <div><div className={`font-display text-3xl font-semibold leading-none ${w.pair.unpaid ? "text-red-600" : "text-gray-300"}`}>{w.pair.unpaid}</div><div className={`mt-0.5 text-xs font-semibold ${w.pair.unpaid ? "text-red-700" : "text-gray-400"}`}>Unpaid</div></div>
               </div>
             ) : (
-              <div className="font-display text-xl font-semibold leading-tight text-navy">{w.value}</div>
+              <div className="font-display text-3xl font-semibold leading-none text-navy">{w.value}</div>
             )}
-            <div className="mt-0.5 text-xs leading-tight text-gray-500">{w.label}</div>
+            <div className="mt-1.5 text-sm leading-tight text-gray-500">{w.label}</div>
           </Link>
         ))}
 
@@ -166,10 +165,10 @@ export default function Dashboard() {
           const total = new Set(Object.values(rcPending).flatMap((e) => [...e.students])).size;
           return (
             <Link to="/admin/redcomet?status=pending" title="Students with workbook photos not yet entered in Red Comet · click to open"
-              className="col-span-2 rounded-lg border border-amber-300 bg-amber-50/60 px-3 py-2 shadow-sm transition hover:border-royal hover:shadow-md">
-              <div className="flex items-baseline gap-2"><div className="font-display text-xl font-semibold leading-tight text-amber-700">{total}</div>
-              <div className="text-xs text-gray-500">Red Comet: waiting</div></div>
-              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px]">
+              className="flex max-w-full flex-col justify-center rounded-xl border border-amber-300 bg-amber-50/60 px-3.5 py-2.5 shadow-sm transition hover:border-royal hover:shadow-md">
+              <div className="flex items-baseline gap-2"><div className="font-display text-3xl font-semibold leading-none text-amber-700">{total}</div>
+              <div className="text-sm text-gray-500">Red Comet: waiting</div></div>
+              <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs">
                 {grades.filter((g) => rcPending[g.id]).map((g) => (
                   <span key={g.id} className="flex items-center gap-1 font-semibold text-navy" title={`${rcPending[g.id].photos} photo${rcPending[g.id].photos === 1 ? "" : "s"}`}>
                     <span className={`h-2 w-2 rounded-full ${gradeColor(grades, g.id).dot}`} />{g.name} <span className="text-amber-700">{rcPending[g.id].students.size}</span>
@@ -181,7 +180,7 @@ export default function Dashboard() {
         })()}
 
         {can("academics") && <Link to="/admin/updates" title="Open Class Updates"
-          className="col-span-full rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm transition hover:border-royal hover:shadow-md">
+          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm transition hover:border-royal hover:shadow-md">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <div className="font-display text-base font-semibold text-navy">Class updates this week</div>
             <div className="text-xs text-gray-400">Mon {usDate(week[0])} – Sun {usDate(week[1])} · click to open</div>
@@ -198,18 +197,18 @@ export default function Dashboard() {
         </Link>}
 
         {can("tasks") && <Link to="/admin/tasks"
-          className="col-span-full rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm transition hover:border-royal hover:shadow-md">
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-            <div className="min-w-[5.5rem]">
-              <div className="font-display text-3xl font-semibold leading-tight text-navy">{openTasks ?? "—"}</div>
-              <div className="text-xs text-gray-500">Open tasks</div>
+          className="max-w-full rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm transition hover:border-royal hover:shadow-md">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <div>
+              <div className="font-display text-5xl font-semibold leading-none text-navy">{openTasks ?? "—"}</div>
+              <div className="mt-1 text-sm text-gray-500">Open tasks</div>
             </div>
-            <div className="flex flex-1 flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2">
               {BUCKETS.map((b) => (
-                <div key={b.icon} className={`flex min-w-[5.5rem] flex-1 items-center gap-2 rounded-lg border px-2.5 py-1 ${b.className}`}>
-                  <span className="text-sm">{b.icon}</span>
+                <div key={b.icon} className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 ${b.className}`}>
+                  <span className="text-lg">{b.icon}</span>
                   <div>
-                    <div className="font-display text-lg font-semibold leading-none">{taskBuckets ? taskBuckets[b.icon] ?? 0 : "—"}</div>
+                    <div className="font-display text-2xl font-semibold leading-none">{taskBuckets ? taskBuckets[b.icon] ?? 0 : "—"}</div>
                     <div className="text-[11px] font-medium" title={b.name}>{labels[b.icon]}</div>
                   </div>
                 </div>
