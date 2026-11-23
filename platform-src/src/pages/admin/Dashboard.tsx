@@ -141,7 +141,7 @@ export default function Dashboard() {
           project URL and anon key in <code>src/lib/supabase.ts</code>.
         </div>
       )}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         {widgets.filter(allowed).map((w) => (
           <Link key={w.label} to={w.to}
             className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-royal hover:shadow-md">
@@ -176,7 +176,7 @@ export default function Dashboard() {
         })()}
 
         {can("academics") && <Link to="/admin/updates" title="Open Class Updates"
-          className="col-span-2 rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-royal hover:shadow-md lg:col-span-4">
+          className="col-span-2 rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-royal hover:shadow-md lg:col-span-5">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <div className="font-display text-xl font-semibold text-navy">Class updates this week</div>
             <div className="text-xs text-gray-400">Mon {usDate(week[0])} – Sun {usDate(week[1])} · click to open</div>
@@ -193,7 +193,7 @@ export default function Dashboard() {
         </Link>}
 
         {can("tasks") && <Link to="/admin/tasks"
-          className="col-span-2 rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-royal hover:shadow-md lg:col-span-4">
+          className="col-span-2 rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-royal hover:shadow-md lg:col-span-5">
           <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
             <div className="min-w-[8rem]">
               <div className="font-display text-5xl font-semibold text-navy">{openTasks ?? "—"}</div>
