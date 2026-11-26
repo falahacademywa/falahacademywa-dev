@@ -8,9 +8,10 @@ interface Upd { id: string; subject: string; note: string; update_date: string; 
 const day = (iso: string) => new Date(iso.slice(0, 10) + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 const isQuran = (s: string) => /qur'?an|quran|hifz|qaida|tajw/i.test(s);
 
-export default function ProgressCard({ firstName, monthLabel, counts, updates, onSeeFeed }: {
+export default function ProgressCard({ firstName, monthLabel, counts, updates, onSeeFeed, showAttendance = true }: {
   firstName: string; monthLabel: string; counts: { present: number; late: number; absent: number };
   updates: Upd[]; onSeeFeed: () => void;
+  showAttendance?: boolean;   // off on the parent Progress tab, where the Attendance card sits just above
 }) {
   const marked = counts.present + counts.late + counts.absent;
   const inClass = counts.present + counts.late;
@@ -30,11 +31,11 @@ export default function ProgressCard({ firstName, monthLabel, counts, updates, o
   return (
     <section className="rounded-xl bg-white p-5 shadow-sm">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <h2 className="font-display text-lg font-semibold text-navy">Progress — {firstName}</h2>
-        <span title={marked ? `${inClass} of ${marked} school days marked${counts.late ? `, ${counts.late} late` : ""}${counts.absent ? `, ${counts.absent} absent` : ""}` : undefined}
+        <h2 className="font-display text-lg font-semibold text-navy">{showAttendance ? "Progress" : "Teachers' notes"} — {firstName}</h2>
+        {showAttendance && <span title={marked ? `${inClass} of ${marked} school days marked${counts.late ? `, ${counts.late} late` : ""}${counts.absent ? `, ${counts.absent} absent` : ""}` : undefined}
           className={`rounded-full px-2.5 py-0.5 text-sm font-semibold ${pct == null ? "bg-silver text-gray-500" : pct >= 90 ? "bg-green-100 text-green-700" : pct >= 75 ? "bg-amber-100 text-amber-800" : "bg-red-100 text-red-700"}`}>
           {pct == null ? `No attendance yet in ${monthLabel}` : `${pct}% in class · ${monthLabel}`}
-        </span>
+        </span>}
       </div>
 
       <h3 className="mt-3 text-xs font-bold uppercase tracking-wide text-gray-400">Qur'an</h3>
@@ -61,7 +62,7 @@ export default function ProgressCard({ firstName, monthLabel, counts, updates, o
         </div>
       ) : <p className="mt-1 text-sm text-gray-400">No class updates yet.</p>}
 
-      <button onClick={onSeeFeed} className="mt-2 text-xs font-semibold text-royal hover:underline">All class updates in the Feed ↓</button>
+      <button onClick={onSeeFeed} className="mt-2 text-xs font-semibold text-royal hover:underline">All class updates in the Feed on Home →</button>
     </section>
   );
 }
