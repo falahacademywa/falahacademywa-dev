@@ -5,6 +5,8 @@
 //                      designation, notes) and their gifts: amount, pledged or donated, one-time or
 //                      monthly, method (cash, Zelle, employee matching, Fidelity, other)
 // Add / edit / delete for donors and gifts. A pledge becomes a donation with "Mark donated".
+// Zelle (phase 52): fees are matched first; a known donor's Zelle is recorded here by itself, and
+// any other gift is matched by hand on Admin -> Fees ("Donation…"), which can create the donor.
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase, configMissing } from "../../lib/supabase";
@@ -63,9 +65,12 @@ export default function Donors() {
   const [donors, setDonors] = useState<Donor[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [zWaiting, setZWaiting] = useState(0);   // Zelle alerts still to match (fees or donation), phase 52
 
   async function load() {
     if (configMissing) { setDonors([]); return; }
+    supabase.from("zelle_inbox").select("id", { count: "exact", head: true }).eq("status", "pending")
+      .then(({ count }) => setZWaiting(count ?? 0));
     const { data, error } = await supabase.from("donors")
       .select("id, name, email, phone, address, city, company, designation, notes, created_at, updated_at, donations ( id, donor_id, amount, status, frequency, method, method_other, pledged_on, donated_on, note, created_at )")
       .order("name");
@@ -86,7 +91,16 @@ export default function Donors() {
         ? (donors === null ? <p className="text-sm text-gray-400">Loading…</p>
           : current ? <DonorProfile donor={current} reload={load} onDeleted={() => { nav("/admin/donors", { replace: true }); load(); }} />
           : <div className="space-y-3"><BackLink to="/admin/donors" label="Donors" /><p className="text-sm text-gray-500">This donor is not on file (deleted?).</p></div>)
-        : <DonorList donors={donors} onAdd={() => setAdding(true)} onOpen={(d) => nav(`/admin/donors/${d}`)} />}
+        : <>
+            {zWaiting > 0 && (
+              <button onClick={() => nav("/admin/fees")}
+                className="flex w-full flex-wrap items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-left text-sm text-amber-800 hover:bg-amber-100">
+                💸 <b>{zWaiting} Zelle payment{zWaiting === 1 ? "" : "s"}</b> waiting for a match: fees or a donation.
+                <span className="ml-auto font-semibold underline">Open Fees →</span>
+              </button>
+            )}
+            <DonorList donors={donors} onAdd={() => setAdding(true)} onOpen={(d) => nav(`/admin/donors/${d}`)} />
+          </>}
       {adding && <AddDonor onClose={() => setAdding(false)} onSaved={async (newId) => { setAdding(false); await load(); nav(`/admin/donors/${newId}`); }} />}
     </div>
   );
