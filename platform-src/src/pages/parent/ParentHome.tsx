@@ -12,6 +12,7 @@ import MeetingCard from "../../components/MeetingCard";
 import ParentFeed, { type FeedItem } from "../../components/ParentFeed";
 import { useLiveNotifications, prependUnique } from "../../lib/liveNotifications";
 import SecureImg, { SecureLink } from "../../components/SecureImg";
+import ProgressCard from "../../components/ProgressCard";
 
 interface Child {
   student_id: string;
@@ -1352,6 +1353,13 @@ td{padding:6px 8px;border-bottom:1px solid #e3e6ee;vertical-align:top}td.r,th.r{
             )}
         </section>
 
+        {/* Progress (President 2026-11-26): attendance %, Qur'an notes, latest note per subject. No Red Comet pages for parents. */}
+        {active && (
+          <ProgressCard firstName={active.students.first_name} counts={counts} updates={updates}
+            monthLabel={new Date(month + "-15").toLocaleDateString("en-US", { month: "long" })}
+            onSeeFeed={() => document.getElementById("feed")?.scrollIntoView({ behavior: "smooth" })} />
+        )}
+
         {/* Fees: above the feed, so the family sees what is due before the news (President 2026-11-22) */}
         <div className="grid scroll-mt-4 gap-5" id="fees">
           {/* compact (President 2026-11-22): title, amount, this month's status and Print on one line, like Attendance */}
@@ -1489,7 +1497,7 @@ td{padding:6px 8px;border-bottom:1px solid #e3e6ee;vertical-align:top}td.r,th.r{
 
         <div className="grid gap-5 lg:grid-cols-5">
         {/* Upcoming events */}
-        <section className="rounded-xl bg-white p-5 shadow-sm lg:col-span-5">
+        <section className="min-w-0 rounded-xl bg-white p-5 shadow-sm lg:col-span-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
             <h2 className="font-display text-lg font-semibold text-navy">Upcoming</h2>
             <button onClick={openFullCalendar}
