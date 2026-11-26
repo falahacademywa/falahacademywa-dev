@@ -50,6 +50,12 @@ function totals(gs: Gift[]) {
   }
   return t;
 }
+// "Last donated" column (President 2026-11-26): month and year of the latest gift actually received, "Mon YYYY"
+function lastDonated(gs: Gift[]): string | null {
+  const days = gs.filter((g) => g.status === "donated").map((g) => g.donated_on ?? g.created_at.slice(0, 10)).sort();
+  const d = days[days.length - 1];
+  return d ? new Date(d.slice(0, 10) + "T12:00:00").toLocaleDateString("en-US", { month: "short", year: "numeric" }) : null;
+}
 function amountText(once: number, monthly: number) {
   if (!once && !monthly) return "—";
   return [once ? money(once) : "", monthly ? `${money(monthly)}/mo` : ""].filter(Boolean).join(" + ");
@@ -171,16 +177,17 @@ function DonorList({ donors, onAdd, onOpen }: { donors: Donor[] | null; onAdd: (
           : !shown.length ? <p className="mt-4 text-sm text-gray-400">{all.length ? "No donor matches." : "No donors yet. Add the first one with “+ Add donor”."}</p>
           : (
             <div className="mt-4 divide-y divide-gray-100">
-              <div className="hidden grid-cols-[2fr_1fr_1fr_1fr_1.2fr] gap-3 px-2 pb-2 text-[11px] font-bold uppercase tracking-wide text-gray-400 md:grid">
-                <span>Donor</span><span>Pledged</span><span>Donated</span><span>Type</span><span>Method</span>
+              <div className="hidden grid-cols-[2fr_1fr_1fr_0.9fr_1fr_1.2fr] gap-3 px-2 pb-2 text-[11px] font-bold uppercase tracking-wide text-gray-400 md:grid">
+                <span>Donor</span><span>Pledged</span><span>Donated</span><span>Last donated</span><span>Type</span><span>Method</span>
               </div>
               {shown.map((d) => {
                 const t = totals(d.donations);
+                const last = lastDonated(d.donations);
                 const freqs = [...new Set(d.donations.map((g) => g.frequency))];
                 const methods = [...new Set(d.donations.map((g) => methodLabel(g)))];
                 return (
                   <button key={d.id} onClick={() => onOpen(d.id)}
-                    className="grid w-full grid-cols-2 gap-x-3 gap-y-1 rounded-lg px-2 py-3 text-left text-sm hover:bg-silver/60 md:grid-cols-[2fr_1fr_1fr_1fr_1.2fr] md:items-center">
+                    className="grid w-full grid-cols-2 gap-x-3 gap-y-1 rounded-lg px-2 py-3 text-left text-sm hover:bg-silver/60 md:grid-cols-[2fr_1fr_1fr_0.9fr_1fr_1.2fr] md:items-center">
                     <span className="col-span-2 min-w-0 md:col-span-1">
                       <span className="block truncate font-semibold text-navy">{d.name}</span>
                       <span className="block truncate text-xs text-gray-500">{[d.designation, d.company].filter(Boolean).join(", ") || d.city || d.email || ""}</span>
@@ -190,6 +197,9 @@ function DonorList({ donors, onAdd, onOpen }: { donors: Donor[] | null; onAdd: (
                     </span>
                     <span className={t.donated || t.donatedMo ? "font-semibold text-emerald-deep" : "text-gray-300"}>
                       <span className="text-[10px] font-normal text-gray-400 md:hidden">Donated </span>{amountText(t.donated, t.donatedMo)}
+                    </span>
+                    <span className={last ? "text-gray-700" : "text-gray-300"}>
+                      <span className="text-[10px] font-normal text-gray-400 md:hidden">Last donated </span>{last ?? "—"}
                     </span>
                     <span className="flex flex-wrap gap-1">
                       {freqs.map((f) => <span key={f} className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${f === "monthly" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-600"}`}>{f === "monthly" ? "Monthly" : "One-time"}</span>)}
